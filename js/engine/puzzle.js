@@ -1,336 +1,140 @@
-/* Ajustes Puzzle para el layout clásico novel con TRANSICIONES y QTE */
-class PuzzleSystem {
-    constructor() {
-        this.screen = document.getElementById('puzzleScreen');
-        this.title = document.getElementById('pzlTitle');
-        this.picarats = document.getElementById('pzlPicarats');
-        this.textBody = document.getElementById('pzlParams');
-        this.interactiveArea = document.getElementById('pzlInteractive');
-        this.btnLeave = document.getElementById('btnLeavePuzzle');
-        this.btnSubmit = document.getElementById('btnSubmitPuzzle');
-
-        this.transitionOverlay = document.getElementById('transitionOverlay');
-        
-        // Pantallas nuevas
-        this.presLayer = document.getElementById('pzlPresentation');
-        this.presTitle = document.getElementById('presTitle');
-        this.presPicarats = document.getElementById('presPicarats');
-        this.presBtn = document.getElementById('presBtn');
-        this.presLeaveBtn = document.getElementById('presLeaveBtn');
-        
-        this.finLayer = document.getElementById('pzlFinish');
-        this.finScore = document.getElementById('finScore');
-        this.finBtn = document.getElementById('finBtn');
-
-        this.currentPuzzle = null;
-        this.currentSelection = null; 
-        
-        // QTE logic
-        this.timerInterval = null;
-        this.currentTimeLeft = 0;
-        this.maxBonus = 0;
-
-        this.setupEvents();
+class InteractivePuzzle {
+    constructor(pzData, containerElement) {
+        this.data = pzData;
+        this.container = containerElement;
+        this.state = {};
+        this.render();
     }
 
-    setupEvents() {
-        this.presBtn.addEventListener('click', () => {
-            window.AudioManager.playBlip(900);
-            this.presLayer.classList.add('hidden');
-            this.startTimerIfAny();
+    render() {
+        this.container.innerHTML = "";
+        
+        // --- MODULO RUTA_NODOS (Problema del Viajante) ---
+        if(this.data.type === "ruta_nodos") {
+            this.state.sequence = [];
+            this.container.style.position = "relative";
             
-            // Si es la primera vez que se abre en este ciclo, animacion
-            if (this.currentSelection === null && !this.screen.classList.contains('active-session')) {
-                this.screen.classList.add('active-session');
-            }
-        });
-        
-        this.presLeaveBtn.addEventListener('click', () => {
-            window.AudioManager.playBlip(500);
-            this.screen.classList.remove('active-session');
-            this.closePuzzle();
-            if(window.GameDialog && this.currentPuzzle.failNode) {
-                window.GameDialog.resumeTemp();
-                window.GameDialog.loadNode(this.currentPuzzle.failNode);
-            }
-        });
-        
-        this.finBtn.addEventListener('click', () => {
-             window.AudioManager.playBlip(600);
-             this.finLayer.classList.add('hidden');
-             this.screen.classList.remove('active-session');
-             this.closePuzzle();
-             if (this.currentPuzzle.winNode) {
-                 window.GameDialog.resumeTemp();
-                 window.GameDialog.loadNode(this.currentPuzzle.winNode);
-             }
-             window.AudioManager.startOverworldMusic();
-        });
-
-        this.btnLeave.addEventListener('click', () => {
-            window.AudioManager.playBlip(500);
-            this.presLayer.classList.remove('hidden'); // Vuelve a la intro
-        });
-
-        this.btnSubmit.addEventListener('click', () => {
-            // Evaluamos fill_blanks aqui rapido para ver si esta vacio
-            if (this.currentPuzzle && this.currentPuzzle.type === 'fill_blanks') {
-                const selects = Array.from(this.interactiveArea.querySelectorAll('.pz-dropdown'));
-                if(selects.some(s => s.value === "")) {
-                     window.GameDialog.startDialog({"start": {char: "luke", text: "¡Profesor! Me he saltado huecos por rellenar en el pergamino.", next:null}}, "start");
-                     return;
-                }
-            } else if(!this.currentSelection) {
-                const errDialog = {
-                    "start": {char: "luke", text: "¡Profesor! Aún no he marcado ninguna decisión lógica en el pergamino.", next:null}
-                };
-                window.GameDialog.startDialog(errDialog, "start");
-                return;
-            }
-            this.validate();
-        });
-    }
-
-    loadPuzzle(puzzleId) {
-        const pzData = window.GameData.puzzles[puzzleId];
-        if(!pzData) { alert("Puzzle no encontrado."); return; }
-        
-        this.currentPuzzle = pzData;
-        this.currentSelection = null;
-        
-        // Rellenar Presentacion
-        this.presTitle.innerText = pzData.title;
-        this.presPicarats.innerText = pzData.maxPuntos + " Picarats";
-        this.presPicarats.classList.remove('punish-anim');
-        this.presBtn.innerText = "Empezar Puzle";
-        this.presLayer.classList.remove('hidden');
-        
-        this.title.innerText = pzData.title;
-        this.picarats.innerText = pzData.maxPuntos;
-        
-        let injectedHTML = pzData.description;
-        if (pzData.timeLimit) {
-            this.currentTimeLeft = pzData.timeLimit;
-            this.maxBonus = pzData.maxPuntos;
-            injectedHTML = `<div class="qte-bar-container"><div id="qteBarFill" class="qte-bar-fill"></div></div>` + injectedHTML;
-        }
-
-        this.textBody.innerHTML = injectedHTML;
-        
-        this.buildInteractiveArea(pzData);
-        
-        // Muestra la pantalla base con the presLayer on top
-        this.playTransitionAnimation();
-    }
-
-    startTimerIfAny() {
-        clearInterval(this.timerInterval);
-        if(!this.currentPuzzle.timeLimit) return;
-
-        const maxT = this.currentPuzzle.timeLimit;
-        const fill = document.getElementById('qteBarFill');
-        if(!fill) return;
-
-        this.timerInterval = setInterval(() => {
-            this.currentTimeLeft -= 0.1;
-            const pct = (this.currentTimeLeft / maxT) * 100;
-            fill.style.width = Math.max(0, pct) + "%";
+            // Canvas for drawing lines
+            this.canvas = document.createElement("svg");
+            this.canvas.style = `position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:1;`;
+            this.container.appendChild(this.canvas);
             
-            if(pct < 30) {
-                fill.style.backgroundPosition = "left center"; // Se pone rojo
-            }
-
-            if(this.currentTimeLeft <= 0) {
-                clearInterval(this.timerInterval);
-                fill.style.width = "0%";
-            }
-        }, 100);
-    }
-
-    playTransitionAnimation() {
-        window.AudioManager.playPuzzleTransitionJingle();
-
-        this.transitionOverlay.classList.remove('play');
-        void this.transitionOverlay.offsetWidth;
-        
-        this.transitionOverlay.classList.add('play');
-
-        setTimeout(() => {
-            this.screen.classList.remove('hidden');
-            window.AudioManager.startPuzzleMusic(); 
-            this.startTimerIfAny(); // Comienza la cuenta atrás si la hay
-        }, 750);
-    }
-
-    buildInteractiveArea(pzData) {
-        this.interactiveArea.innerHTML = '';
-        
-        if(pzData.type === 'select_element') {
-            pzData.options.forEach(opt => {
-                const box = document.createElement('div');
-                box.style.display = 'flex';
-                box.style.flexDirection = 'column';
-                box.style.alignItems = 'center';
-                box.style.cursor = 'pointer';
-                box.style.padding = '15px 30px';
-                box.style.border = '2px solid var(--wood)';
-                box.style.borderRadius = '4px';
-                box.style.background = '#fff';
-                box.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                box.style.fontFamily = 'var(--font-heading)';
-                box.style.transition = 'all 0.2s';
-
-                box.innerHTML = `<span style="font-size: 3.5rem;">${opt.icon}</span><br><b style="margin-top:10px; font-size:1.1rem; color:var(--dark);">${opt.label}</b>`;
-
-                box.onclick = () => {
-                    Array.from(this.interactiveArea.children).forEach(c => {
-                        c.style.borderColor = 'var(--wood)';
-                        c.style.background = '#fff';
-                        c.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                    });
-                    
-                    box.style.borderColor = 'var(--gold)';
-                    box.style.background = 'rgba(200, 150, 12, 0.1)';
-                    box.style.boxShadow = '0 0 0 2px rgba(200, 150, 12, 0.3)';
-                    
-                    this.currentSelection = opt.id;
-                    window.AudioManager.playBlip(700); 
+            this.nodesMap = {};
+            this.data.nodes.forEach(nd => {
+                const nodeEl = document.createElement("div");
+                nodeEl.className = "route-node";
+                nodeEl.style.position = "absolute";
+                nodeEl.style.left = `calc(${nd.x}% - 30px)`;
+                nodeEl.style.top = `calc(${nd.y}% - 30px)`;
+                nodeEl.innerText = nd.id + 1;
+                
+                nodeEl.onclick = () => {
+                    window.AudioManager.playBlip();
+                    if(this.state.sequence.includes(nd.id)) {
+                        // Reset if clicking an already clicked node
+                        this.state.sequence = [];
+                        this.container.querySelectorAll('.route-node').forEach(e => e.classList.remove('active'));
+                        this.canvas.innerHTML = '';
+                    } else {
+                        this.state.sequence.push(nd.id);
+                        nodeEl.classList.add('active');
+                        this.drawLines();
+                    }
                 };
-
-                this.interactiveArea.appendChild(box);
+                
+                this.nodesMap[nd.id] = {el: nodeEl, x: nd.x, y: nd.y};
+                this.container.appendChild(nodeEl);
             });
         }
-        else if (pzData.type === 'fill_blanks') {
-            this.currentSelection = null; // Se calcula en validacion
+        
+        // --- MODULO PARCHEO_RELACIONES (Emparejar conceptos) ---
+        else if (this.data.type === "parcheo_relaciones") {
+            this.state.matches = {};
+            this.state.selected = null;
             
-            let htmlForm = `<p style="font-size: 1.3rem; line-height: 1.8; color: var(--dark); padding: 20px; border: 2px dashed var(--gold); border-radius: 8px; background: rgba(255,255,255,0.6); max-width:800px; text-align:left;">`;
+            const flex = document.createElement('div');
+            flex.style = "display:flex; justify-content:space-between; width:100%; padding:20px; gap:20px;";
             
-            // Reemplazar {0}, {1} con selects
-            let parts = pzData.textTemplate.split(/(\{\d+\})/g);
-            parts.forEach(part => {
-                if (part.match(/\{\d+\}/)) {
-                    htmlForm += `<select class="pz-dropdown" style="font-family:var(--font-heading); font-size:1.1rem; padding:4px; margin:0 5px; border:2px solid var(--wood); border-radius:4px; color:var(--dark); font-weight:bold; outline:none; cursor:pointer;">
-                                    <option value="" disabled selected>--- Elegir ---</option>
-                                    ${pzData.options.map(o => `<option value="${o}">${o}</option>`).join('')}
-                                 </select>`;
-                } else {
-                    htmlForm += part;
-                }
-            });
-            htmlForm += `</p>`;
+            const buildCol = (items, side) => {
+                const col = document.createElement('div');
+                col.style = "display:flex; flex-direction:column; gap:10px; width:45%;";
+                items.forEach(it => {
+                    const btn = document.createElement('div');
+                    btn.className = "drag-item";
+                    btn.innerText = it.t;
+                    btn.style.textAlign = "center";
+                    btn.onclick = () => {
+                        window.AudioManager.playBlip();
+                        if(btn.dataset.paired) return; // Ya emparejado
+                        
+                        if(!this.state.selected) {
+                            this.state.selected = {id: it.id, side: side, el: btn};
+                            btn.style.borderColor = "var(--gold)";
+                            btn.style.background = "var(--parchment2)";
+                        } else {
+                            if(this.state.selected.side === side) { // Cambio en misma columna
+                                this.state.selected.el.style.borderColor = "";
+                                this.state.selected.el.style.background = "";
+                                this.state.selected = {id: it.id, side: side, el: btn};
+                                btn.style.borderColor = "var(--gold)";
+                            } else {
+                                // Match!
+                                btn.style.borderColor = "var(--green)";
+                                btn.style.background = "#e0f2e0";
+                                btn.dataset.paired = "true";
+                                
+                                this.state.selected.el.style.borderColor = "var(--green)";
+                                this.state.selected.el.style.background = "#e0f2e0";
+                                this.state.selected.el.dataset.paired = "true";
+                                
+                                if(side === 'B') this.state.matches[this.state.selected.id] = it.id;
+                                else this.state.matches[it.id] = this.state.selected.id;
+                                
+                                this.state.selected = null;
+                            }
+                        }
+                    };
+                    col.appendChild(btn);
+                });
+                return col;
+            };
             
-            this.interactiveArea.innerHTML = htmlForm;
-            
-            // Feedback sonoro al cambiar
-            Array.from(this.interactiveArea.querySelectorAll('.pz-dropdown')).forEach(sel => {
-                sel.addEventListener('change', () => { window.AudioManager.playBlip(800); });
-            });
+            flex.appendChild(buildCol(this.data.colA, 'A'));
+            flex.appendChild(buildCol(this.data.colB, 'B'));
+            this.container.appendChild(flex);
+        }
+    }
+
+    drawLines() {
+        this.canvas.innerHTML = '';
+        for(let i = 0; i < this.state.sequence.length - 1; i++) {
+            const n1 = this.nodesMap[this.state.sequence[i]];
+            const n2 = this.nodesMap[this.state.sequence[i+1]];
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", n1.x + "%");
+            line.setAttribute("y1", n1.y + "%");
+            line.setAttribute("x2", n2.x + "%");
+            line.setAttribute("y2", n2.y + "%");
+            line.setAttribute("stroke", "var(--gold)");
+            line.setAttribute("stroke-width", "4");
+            this.canvas.appendChild(line);
         }
     }
 
     validate() {
-        if (this.isAnimating) return;
-        this.isAnimating = true;
-        clearInterval(this.timerInterval);
-        
-        if (this.currentPuzzle.type === 'fill_blanks') {
-            const selects = Array.from(this.interactiveArea.querySelectorAll('.pz-dropdown'));
-            if(selects.some(s => s.value === "")) this.currentSelection = null; 
-            else this.currentSelection = selects.map(s => s.value).join(',');
+        if(this.data.type === "ruta_nodos") {
+            const ansStr = this.state.sequence.join(',');
+            return this.data.correctAnswers.includes(ansStr);
         }
-        
-        const isCorrect = this.currentSelection === this.currentPuzzle.correctAnswer;
-        
-        this.interactiveArea.style.display = 'none';
-        document.querySelector('.puzzle-footer').style.display = 'none';
-
-        const suspenseDiv = document.createElement('div');
-        suspenseDiv.className = 'suspense-anim';
-        suspenseDiv.style.textAlign = "center";
-        suspenseDiv.style.padding = "40px";
-        suspenseDiv.innerHTML = `<h1 style="font-family: var(--font-heading); font-size:3.5rem; color: var(--dark);">Comprobando respuesta...</h1>`;
-        this.textBody.parentNode.appendChild(suspenseDiv);
-
-        window.AudioManager.playBlip(300);
-        let ticks = 0;
-        let tickInt = setInterval(() => { window.AudioManager.playBlip(300 + (ticks*20)); ticks++; }, 400);
-
-        setTimeout(() => {
-            clearInterval(tickInt);
-            if (isCorrect) {
-                window.AudioManager.playCorrect(); 
-                suspenseDiv.innerHTML = `<h1 style="color:var(--gold); font-family: var(--font-heading); font-size:4rem;">¡Correcto!</h1><p style="font-size:1.5rem; color:var(--dark);">${this.currentPuzzle.explanation}</p>`;
-                
-                window.SaveSystem.data.puzzlesSolved++;
-                let pts = this.currentPuzzle.maxPuntos;
-                if(this.currentPuzzle.timeLimit && this.currentTimeLeft > 0) {
-                    const bonus = Math.floor((this.currentTimeLeft / this.currentPuzzle.timeLimit) * this.maxBonus);
-                    pts += bonus;
-                }
-                
-                window.SaveSystem.data.ingenioPoints += pts;
-                window.SaveSystem.updateHUD();
-
-                setTimeout(() => {
-                    suspenseDiv.remove();
-                    this.interactiveArea.style.display = '';
-                    document.querySelector('.puzzle-footer').style.display = '';
-                    
-                    // Show final screen
-                    this.finScore.innerText = `+${pts} Picarats Obtenidos`;
-                    this.finLayer.classList.remove('hidden');
-                    this.isAnimating = false;
-                }, 4000);
-
-            } else {
-                window.AudioManager.playWrong(); 
-                
-                const prevPoints = this.currentPuzzle.maxPuntos;
-                const optionsArray = this.currentPuzzle.options || [];
-                const optionsCount = Math.max(1, optionsArray.length || 2);
-                const deduction = Math.max(1, Math.floor(prevPoints / optionsCount));
-                const newPoints = Math.max(0, prevPoints - deduction);
-                this.currentPuzzle.maxPuntos = newPoints;
-                
-                suspenseDiv.innerHTML = `<h1 style="color:#D14D4D; font-family: var(--font-heading); font-size:5rem;">¡Falso!</h1>`;
-                
-                setTimeout(() => {
-                    suspenseDiv.remove();
-                    this.interactiveArea.style.display = '';
-                    document.querySelector('.puzzle-footer').style.display = '';
-                    this.currentSelection = null;
-                    this.picarats.innerText = newPoints;
-                    
-                    if(this.currentPuzzle.type === 'fill_blanks') {
-                        Array.from(this.interactiveArea.querySelectorAll('.pz-dropdown')).forEach(s => s.value = "");
-                    } else {
-                        Array.from(this.interactiveArea.children).forEach(c => {
-                            c.style.borderColor = 'var(--wood)';
-                            c.style.background = '#fff';
-                        });
-                    }
-                    
-                    // Vuelve a la intro con animacion de perdida de picarats!
-                    this.presPicarats.innerText = prevPoints + " Picarats";
-                    this.presBtn.innerText = "Reintentar";
-                    this.presLayer.classList.remove('hidden');
-                    
-                    setTimeout(() => {
-                        window.AudioManager.playBlip(200);
-                        this.presPicarats.classList.add('punish-anim');
-                        this.presPicarats.innerText = newPoints + " Picarats";
-                        this.isAnimating = false; // Liberar lock
-                    }, 800);
-                    
-                }, 3500);
+        else if (this.data.type === "parcheo_relaciones") {
+            const reqKeys = Object.keys(this.data.correctPairs);
+            if(Object.keys(this.state.matches).length !== reqKeys.length) return false;
+            for(let k of reqKeys) {
+                if(this.state.matches[k] !== this.data.correctPairs[k]) return false;
             }
-        }, 2200);
-    }
-
-    closePuzzle() {
-        clearInterval(this.timerInterval);
-        this.screen.classList.add('hidden');
+            return true;
+        }
+        return false;
     }
 }
-
-window.GamePuzzle = new PuzzleSystem();
+window.InteractivePuzzle = InteractivePuzzle;

@@ -1,193 +1,178 @@
-/**
- * Sistema de Audio Completo, escalable y con múltiples temas (Overworld, Puzzle, Effects)
- */
-
-let ctx = null;
-let master = null;
-let musicBus = null;
-let sfxBus = null;
-let isAudioEnabled = false;
-
-// Sintetizadores y Efectos Frecuencias bases (estilo Layton DS)
-const hz = n => 440 * Math.pow(2, (n - 69) / 12);
-const N = {
-    Eb2: hz(39), Ab2: hz(44), Bb2: hz(46), Gb2: hz(42), Db2: hz(37),
-    Cb3: hz(47), Eb3: hz(51), F3: hz(53),  Gb3: hz(54), Ab3: hz(56), Bb3: hz(58),
-    Cb4: hz(59), Db4: hz(61), Eb4: hz(63), E4: hz(64), F4: hz(65),  Gb4: hz(66), G4: hz(67), Ab4: hz(68), A4: hz(69), Bb4: hz(70), B4: hz(71),
-    C5: hz(72), Db5: hz(73), D5: hz(74), Eb5: hz(75), E5: hz(76), F5: hz(77),  Gb5: hz(78), G5: hz(79), Ab5: hz(80), A5:hz(81), Bb5: hz(82), Cb5: hz(71),
-    C6: hz(84), Db6: hz(85), D6: hz(86), Eb6: hz(87), E6: hz(88), F6: hz(89),  Gb6: hz(90), G6: hz(91), Ab6: hz(92), A6:hz(93), Bb6: hz(94), B6: hz(95)
-};
-
-// Motores de Audio
-let currentTrack = null;
-let clockTimeout = null;
-
-function initAudio() {
-    if (isAudioEnabled) return;
-    ctx = new (window.AudioContext || window.webkitAudioContext)();
-    master = ctx.createGain(); master.gain.value = 1.0; master.connect(ctx.destination);
+// ══════════════════════════════════════════════════════
+//  MOTOR DE AUDIO CONVOLVER (Acorde a referencia V8/Layton)
+// ══════════════════════════════════════════════════════
+const AudioManager = {
+    ctx: null, master: null, limiter: null, mainBus: null,
+    roomConv: null, plateConv: null, roomSend: null, plateSend: null,
+    running: false, isSoundEnabled: false,
     
-    musicBus = ctx.createGain(); musicBus.gain.value = 0.3; musicBus.connect(master);
-    sfxBus = ctx.createGain(); sfxBus.gain.value = 0.5; sfxBus.connect(master);
-    
-    isAudioEnabled = true;
-    if (ctx.state === 'suspended') ctx.resume();
-}
+    // Frecuencias Eb menor
+    N: {
+      Eb2: 77.78, Ab2: 103.83, Bb2: 116.54, Gb2: 92.50, Db2: 69.30,
+      Eb3: 155.56, F3: 174.61,  Gb3: 185.00, Ab3: 207.65, Bb3: 233.08, Cb3: 123.47, Db3: 138.59,
+      Eb4: 311.13, F4: 349.23,  Gb4: 369.99, Ab4: 415.30, Bb4: 466.16, Cb4: 246.94, Db4: 277.18,
+      Eb5: 622.25, F5: 698.46,  Gb5: 739.99, Ab5: 830.61, Bb5: 932.33, Db5: 554.37, Cb5: 493.88
+    },
 
-function setMusicVolume(value) { if (musicBus) musicBus.gain.value = parseFloat(value); }
-function setSfxVolume(value) { if(sfxBus) sfxBus.gain.value = parseFloat(value); }
+    q: Math.floor((60 / 108)*1000)/1000, 
+    seqTimer: null, barCount: 0, startTime: null, currentTheme: null,
 
-function stopAllMusic() {
-    clearTimeout(clockTimeout);
-    currentTrack = null;
-    // Un fadeout rústico rápido cortaría el ctx pero no hace falta, el GC lo limpia si no hay schedule
-}
+    init() {
+        if (this.ctx) return;
+        try {
+            this.ctx = new window.AudioContext();
+            this.master = this.ctx.createGain(); this.master.gain.value = 0.25; this.master.connect(this.ctx.destination);
+            
+            this.limiter = this.ctx.createDynamicsCompressor();
+            this.limiter.threshold.value = -6; this.limiter.knee.value = 3; this.limiter.ratio.value = 10;
+            this.limiter.connect(this.master);
+            
+            this.mainBus = this.ctx.createGain(); this.mainBus.connect(this.limiter);
+            
+            this.roomConv = this.makeConvolver(1.2, 3.5); this.plateConv = this.makeConvolver(2.5, 1.8);
+            this.roomConv.connect(this.mainBus); this.plateConv.connect(this.mainBus);
+            
+            this.isSoundEnabled = true;
+        } catch(e) { console.warn("Audio Context Failed:", e); }
+    },
 
-// =================== SINTETIZADORES COMPONENTES ===================
-function playMarimba(freq, t, dur, vol, bus=musicBus) {
-    if (!freq) return;
-    [1, 3.9].forEach(ratio => {
-        const osc = ctx.createOscillator(); const env = ctx.createGain();
+    makeConvolver(secs, tail) {
+      if(!this.ctx) return null;
+      const conv = this.ctx.createConvolver();
+      const len  = Math.floor(this.ctx.sampleRate * secs);
+      const buf  = this.ctx.createBuffer(2, len, this.ctx.sampleRate);
+      for (let c = 0; c < 2; c++) {
+        const d = buf.getChannelData(c);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, tail);
+      }
+      conv.buffer = buf; return conv;
+    },
+
+    toRoom(node, amt=1) { if(!this.ctx) return; const g = this.ctx.createGain(); g.gain.value = amt; node.connect(g); g.connect(this.roomConv); },
+    toPlate(node, amt=1) { if(!this.ctx) return; const g = this.ctx.createGain(); g.gain.value = amt; node.connect(g); g.connect(this.plateConv); },
+
+    // Synth Instruments
+    marimba(freq, t, dur, vol = 0.095) {
+      if (!this.ctx || freq <= 0) return;
+      const dec = Math.min(dur, this.q * 3 * 0.92 * 0.95);
+      [{ ratio: 1, v: vol},{ ratio: 3.9, v: vol * 0.20},{ ratio: 10.7, v: vol * 0.07}].forEach(({ ratio, v }) => {
+        const osc = this.ctx.createOscillator(); const env = this.ctx.createGain();
         osc.frequency.value = freq * ratio;
-        env.gain.setValueAtTime(0, t); env.gain.linearRampToValueAtTime(vol * (ratio===1?1:0.2), t + 0.01); env.gain.exponentialRampToValueAtTime(0.001, t + dur);
-        osc.connect(env); env.connect(bus);
-        osc.start(t); osc.stop(t + dur + 0.1);
-    });
-}
-function playAccordian(freq, t, dur, vol, bus=musicBus) {
-    if (!freq) return;
-    [-5, 5].forEach(cents => {
-        const osc = ctx.createOscillator(); const env = ctx.createGain();
-        osc.type = 'sawtooth'; osc.frequency.value = freq * Math.pow(2, cents/1200);
-        env.gain.setValueAtTime(0, t); env.gain.linearRampToValueAtTime(vol*0.5, t + 0.05); env.gain.exponentialRampToValueAtTime(0.001, t + dur);
-        osc.connect(env); env.connect(bus);
-        osc.start(t); osc.stop(t + dur + 0.1);
-    });
-}
-function playTick(t, bus=musicBus) {
-    // Sonido reloj de Puzzle
-    const osc = ctx.createOscillator(); const env = ctx.createGain();
-    osc.type = 'square'; osc.frequency.value = 1500;
-    env.gain.setValueAtTime(0, t); env.gain.linearRampToValueAtTime(0.02, t + 0.001); env.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
-    osc.connect(env); env.connect(bus);
-    osc.start(t); osc.stop(t + 0.06);
-}
-function playHarp(fArr, t, vol=0.05, bus=musicBus, spread=0.03) {
-    fArr.forEach((f, i) => {
-        const nt = t + i * spread;
-        const osc = ctx.createOscillator(); const env = ctx.createGain();
-        osc.type = 'triangle'; osc.frequency.value = f;
-        env.gain.setValueAtTime(0, nt); env.gain.linearRampToValueAtTime(vol, nt + 0.01); env.gain.exponentialRampToValueAtTime(0.001, nt + 1.5);
-        osc.connect(env); env.connect(bus); osc.start(nt); osc.stop(nt + 1.6);
-    });
-}
+        env.gain.setValueAtTime(0, t); env.gain.linearRampToValueAtTime(v, t + 0.004); env.gain.exponentialRampToValueAtTime(0.0001, t + dec);
+        osc.connect(env); env.connect(this.mainBus); this.toRoom(env, 0.28);
+        osc.start(t); osc.stop(t + dec + 0.04);
+      });
+    },
 
-// =================== TRACKS & RUTINAS ===================
-let globalBar = 0; let globalTime = 0;
-function runSequence(tickDur, barLen, lookahead, schedulerFn) {
-    if (!ctx) return;
-    if(globalTime < ctx.currentTime) globalTime = ctx.currentTime + 0.1;
-    for (let i = 0; i < lookahead; i++) {
-        schedulerFn(globalBar + i, globalTime + (globalBar + i) * tickDur * barLen);
+    accordion(freq, t, dur, vol = 0.026) {
+      if (!this.ctx || freq <= 0) return;
+      const safeDur = Math.min(dur, this.q * 3 * 0.88);
+      const env = this.ctx.createGain(); const hpf = this.ctx.createBiquadFilter();
+      hpf.type = 'highpass'; hpf.frequency.value = 200; hpf.Q.value = 0.5;
+      
+      const steps = 32; const curve = new Float32Array(steps);
+      for (let i = 0; i < steps; i++) curve[i] = vol + 0.015 * Math.sin(2 * Math.PI * 7.8 * (i / steps) * safeDur);
+      
+      env.gain.setValueAtTime(0, t); env.gain.linearRampToValueAtTime(vol, t + 0.060);
+      env.gain.setValueCurveAtTime(curve, t + 0.060, safeDur - 0.070); env.gain.linearRampToValueAtTime(0, t + safeDur);
+      
+      env.connect(hpf); hpf.connect(this.mainBus); this.toRoom(hpf, 0.20);
+      [-6, +6].forEach(cents => {
+        const osc = this.ctx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.value = freq * Math.pow(2, cents / 1200);
+        osc.connect(env); osc.start(t); osc.stop(t + safeDur + 0.04);
+      });
+    },
+
+    contrabass(freq, t, vol = 0.082) {
+      if (!this.ctx || freq <= 0) return;
+      const dec = this.q * 0.72;
+      const osc = this.ctx.createOscillator(); const env = this.ctx.createGain(); const lpf = this.ctx.createBiquadFilter();
+      osc.type = 'triangle'; osc.frequency.value = freq; lpf.type = 'lowpass'; lpf.frequency.value = 300;
+      env.gain.setValueAtTime(0, t); env.gain.linearRampToValueAtTime(vol, t + 0.008); env.gain.exponentialRampToValueAtTime(0.0001, t + dec);
+      osc.connect(lpf); lpf.connect(env); env.connect(this.mainBus); this.toRoom(env, 0.10);
+      osc.start(t); osc.stop(t + dec + 0.03);
+    },
+    
+    bell(freq, t, vol = 0.042) {
+      if (!this.ctx || freq <= 0) return;
+      [[freq, vol, 0.85], [freq * 2.756, vol * 0.25, 0.30]].forEach(([f, v, dec]) => {
+        const osc = this.ctx.createOscillator(); const env = this.ctx.createGain();
+        osc.frequency.value = f;
+        env.gain.setValueAtTime(0, t); env.gain.linearRampToValueAtTime(v, t + 0.004); env.gain.exponentialRampToValueAtTime(0.0001, t + dec);
+        osc.connect(env); env.connect(this.mainBus); this.toPlate(env, 0.65);
+        osc.start(t); osc.stop(t + dec + 0.04);
+      });
+    },
+
+    // Sequences
+    stopAll() { clearTimeout(this.seqTimer); this.currentTheme = null; this.running = false; },
+
+    startPuzzleMusic() {
+      if(!this.isSoundEnabled) return;
+      this.init(); this.stopAll(); this.currentTheme = 'puzzle'; this.barCount = 0;
+      if(this.ctx.state === "suspended") this.ctx.resume();
+      this.startTime = this.ctx.currentTime + 0.15;
+      
+      const m = this.q * 3;
+      const oomPahPah = (root, acc, t0) => {
+        this.contrabass(root, t0, 0.085);
+        [1,2].forEach(b => acc.forEach(n => this.accordion(n, t0 + b*this.q, this.q*0.82, 0.022)));
+      };
+
+      const tick = () => {
+        if(this.currentTheme !== 'puzzle') return;
+        for (let i = 0; i < 3; i++) {
+          const bi = (this.barCount + i) % 8;
+          const t0 = this.startTime + (this.barCount + i) * m;
+          
+          const ch = [
+              {r:this.N.Eb2, a:[this.N.Gb3, this.N.Bb3]}, {r:this.N.Cb3, a:[this.N.Cb3, this.N.Eb4]},
+              {r:this.N.Ab2, a:[this.N.Ab3, this.N.Cb4]}, {r:this.N.Bb2, a:[this.N.Bb3, this.N.Db4]},
+              {r:this.N.Eb2, a:[this.N.Gb3, this.N.Bb3]}, {r:this.N.Cb3, a:[this.N.Cb3, this.N.Eb4]},
+              {r:this.N.Gb2, a:[this.N.Gb3, this.N.Bb3]}, {r:this.N.Bb2, a:[this.N.Bb3, this.N.Db4]}
+          ][bi];
+          
+          oomPahPah(ch.r, ch.a, t0);
+          
+          // Campanas Random Místicas
+          if(bi===0) this.bell(this.N.Eb5, t0 + this.q*2);
+          if(bi===3) this.bell(this.N.Bb5, t0 + this.q);
+          if(bi===6) this.bell(this.N.Ab5, t0 + this.q*2);
+        }
+        this.barCount += 3;
+        this.seqTimer = setTimeout(tick, Math.max(100, (3 * m - 0.08) * 1000));
+      };
+      tick();
+    },
+
+    // Efectos de UX
+    playBlip() {
+      if(!this.ctx || !this.isSoundEnabled) return;
+      const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
+      o.frequency.value = 900 + Math.random()*200;
+      g.gain.setValueAtTime(0.02, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.05);
+      o.connect(g); g.connect(this.master); o.start(); o.stop(this.ctx.currentTime + 0.06);
+    },
+    
+    playCorrect() {
+      if(!this.ctx || !this.isSoundEnabled) return;
+      [this.N.Eb4, this.N.G4, this.N.Bb4, this.N.Eb5].forEach((f, i) => {
+        setTimeout(() => {
+          const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
+          o.frequency.value = f;
+          g.gain.setValueAtTime(0.0, this.ctx.currentTime); g.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 1);
+          o.connect(g); g.connect(this.mainBus); o.start(); o.stop(this.ctx.currentTime + 1);
+        }, i * 150);
+      });
+    },
+
+    playWrong() {
+      if(!this.ctx || !this.isSoundEnabled) return;
+      const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
+      o.type = 'sawtooth'; o.frequency.setValueAtTime(150, this.ctx.currentTime); o.frequency.exponentialRampToValueAtTime(60, this.ctx.currentTime + 0.8);
+      g.gain.setValueAtTime(0.2, this.ctx.currentTime); g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.8);
+      o.connect(g); g.connect(this.mainBus); o.start(); o.stop(this.ctx.currentTime + 1);
     }
-    globalBar += lookahead;
-    clockTimeout = setTimeout(() => runSequence(tickDur, barLen, lookahead, schedulerFn), (lookahead * tickDur * barLen - 0.1) * 1000);
-}
-
-// ── OVERWORLD THEME ── (Melodía Laytonesca misteriosa clásica)
-function startOverworldMusic() {
-    initAudio(); stopAllMusic(); currentTrack = "ovw"; globalBar = 0; globalTime = 0;
-    const q = 60/115; // Un poco más activo
-    setMusicVolume(0.2);
-    runSequence(q, 3, 4, (barIdx, t0) => { // Compás 3/4 vals
-        const cb = barIdx % 4;
-        const root = [N.A4, N.C5, N.F4, N.E4][cb] || N.A4; // Am misterioso
-        playAccordian(root/2, t0, q*0.8, 0.04); 
-        playAccordian(root, t0+q, q*0.8, 0.02);
-        playAccordian(root*1.2, t0+q*2, q*0.8, 0.02);
-        
-        // Melodía ligera de piano/marimba
-        if(cb === 0) { playMarimba(N.A5, t0, q, 0.08); playMarimba(N.C6, t0+q*1.5, q*0.5, 0.08); }
-        if(cb === 1) { playMarimba(N.E6, t0, q, 0.08); playMarimba(N.D6, t0+q, q, 0.08); }
-    });
-}
-
-// ── PUZZLE TENSE THEME ── (Reloj tictac, marimbas repetitivas menores variadas)
-function startPuzzleMusic() {
-    initAudio(); stopAllMusic(); currentTrack = "puz"; globalBar = 0; globalTime = 0;
-    const e = 60/130 / 2; // Rápido, corcheas
-    setMusicVolume(0.25);
-    runSequence(e, 8, 4, (barIdx, t0) => { 
-        for(let i=0; i<8; i++) playTick(t0 + i*e);
-        
-        // Estructura A B A C (ciclo de 4 compases)
-        const ciclo = barIdx % 4;
-        let root;
-        if(ciclo === 0 || ciclo === 2) root = N.Eb3;
-        else if (ciclo === 1) root = N.Cb3;
-        else root = N.Ab2; // Caída profunda al final
-
-        playMarimba(root, t0, e, 0.1);
-        playMarimba(root, t0 + 3*e, e, 0.06);
-        playMarimba(root, t0 + 6*e, e, 0.08);
-        
-        if(ciclo === 1) {
-            playMarimba(N.Bb4, t0+4*e, e, 0.05);
-            playMarimba(N.Gb4, t0+5*e, e, 0.05);
-            playMarimba(N.Eb4, t0+6*e, e, 0.05);
-        }
-        if(ciclo === 3) {
-            playMarimba(N.Db5, t0+2*e, e, 0.06);
-            playMarimba(N.Bb4, t0+4*e, e, 0.06);
-            playMarimba(N.Ab4, t0+6*e, e, 0.06);
-        }
-    });
-}
-
-// =================== EFECTOS DE SONIDO (Rutados a SFX Bus) ===================
-
-function playBlip(baseFreq = 600) {
-    if (!ctx || !sfxBus) return;
-    const f = Math.max(100, baseFreq + (Math.random() * 50 - 25)); 
-    const osc = ctx.createOscillator(); const g = ctx.createGain();
-    osc.type = 'triangle'; osc.frequency.value = f;
-    g.gain.setValueAtTime(0, ctx.currentTime); g.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.01); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
-    osc.connect(g); g.connect(sfxBus); osc.start(); osc.stop(ctx.currentTime + 0.08);
-}
-
-function playCorrect() {
-    if (!ctx || !sfxBus) return;
-    // Chime brillante majestuoso: Acorde Eb Mayor 7 ascendente arpegiado (da-da-da-DAAA)
-    playHarp([N.Eb4, N.G4, N.Bb4, N.D5], ctx.currentTime, 0.1, sfxBus, 0.05);
-    setTimeout(() => playHarp([N.Eb5, N.G5, N.Bb5], ctx.currentTime, 0.1, sfxBus, 0.0), 200); // Acorde final
-}
-
-function playWrong() {
-    if(!ctx || !sfxBus) return;
-    // Sonido triste de caída / disonante
-    const osc = ctx.createOscillator(); const g = ctx.createGain();
-    osc.type = 'sawtooth'; 
-    osc.frequency.setValueAtTime(N.Ab3, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(N.E2, ctx.currentTime + 0.6); // Baja de tono
-    g.gain.setValueAtTime(0.15, ctx.currentTime); g.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.6);
-    osc.connect(g); g.connect(sfxBus); osc.start(); osc.stop(ctx.currentTime + 0.7);
-}
-
-function playPuzzleTransitionJingle() {
-    if(!ctx || !sfxBus) return;
-    // Aquel "tin, tin, tín!" cuando descubres uno. Trino agudo.
-    playHarp([N.Bb5, N.F6, N.Bb6], ctx.currentTime, 0.08, sfxBus, 0.06);
-}
-
-window.AudioManager = {
-    init: initAudio,
-    playBlip: playBlip,
-    playCorrect: playCorrect,
-    playWrong: playWrong,
-    playPuzzleTransitionJingle: playPuzzleTransitionJingle,
-    startOverworldMusic: startOverworldMusic,
-    startPuzzleMusic: startPuzzleMusic,
-    stopAllMusic: stopAllMusic,
-    setMusicVolume: setMusicVolume,
-    setSfxVolume: setSfxVolume
 };
+
+window.AudioManager = AudioManager;

@@ -1,103 +1,171 @@
-/**
- * Lógica principal unificadora del juego clásico. Transformado a Visual Novel con nodos.
- */
-
-document.addEventListener('DOMContentLoaded', () => {
-    setupAccessibilityMenu();
-    window.SaveSystem.load();
-
-    const startScrn = document.getElementById('startScreen');
-    const bgParallax = document.getElementById('parallaxBg');
-    startScrn.addEventListener('mousemove', (e) => {
-        if(!bgParallax || startScrn.classList.contains('hidden')) return;
-        const moveX = (e.clientX / window.innerWidth - 0.5) * -30;
-        const moveY = (e.clientY / window.innerHeight - 0.5) * -30;
-        bgParallax.style.transform = `translate(${moveX}px, ${moveY}px)`;
-    });
-
-    document.getElementById('btnStart').addEventListener('click', async () => {
-        window.AudioManager.init();
-        
-        const startScrn = document.getElementById('startScreen');
-        startScrn.style.opacity = '0';
-        
-        setTimeout(async () => {
-            startScrn.classList.remove('active');
-            startScrn.classList.add('hidden');
-            
-            document.getElementById('gameHUD').classList.remove('hidden');
-            document.getElementById('storyManagerBg').classList.remove('hidden');
-
-            window.AudioManager.startOverworldMusic();
-            await startGameNovel(window.GameScenario_Tema1);
-        }, 500); 
-    });
-});
-
-async function startGameNovel(chapterData) {
-    try {
-        window.GameData = chapterData;
-        window.SaveSystem.data.totalPuzzles = chapterData.metadata.totalPuzzles;
-        window.SaveSystem.updateHUD();
-        
-        // Empieza la historia puramente lineal basada en los dialogos
-        setTimeout(() => {
-            window.GameDialog.startDialog(chapterData.dialogs, "start");
-        }, 500);
-    } catch (e) {
-        console.error("Error cargando capítulo:", e);
+class GameEngineClass {
+    constructor() {
+        this.data = window.GameData;
+        this.state = { points: 0, coins: 5, activePuzzleId: null };
+        this.pzlInstance = null;
     }
-}
 
-function setupAccessibilityMenu() {
-    const btn = document.getElementById('btnAccessibility');
-    const menu = document.getElementById('accessibilityMenu');
-    const closeBtn = document.getElementById('closeAccessibility');
-    
-    // Controles táctiles Custom
-    const musicBlocks = document.querySelectorAll('#musicVolBars .vol-bar');
-    const sfxBlocks = document.querySelectorAll('#sfxVolBars .vol-bar');
+    init() {
+        // UI Bindings
+        document.getElementById('btnStartGame').onclick = () => {
+            if(document.getElementById('chkAudio').checked) window.AudioManager.init();
+            document.getElementById('s-intro').classList.remove('active');
+            this.loadDialog("start");
+        };
+        
+        document.getElementById('btnContinueDialog').onclick = () => this.nextDialogAction();
+        document.getElementById('btnPresStart').onclick = () => this.startPuzzleMinigame();
+        document.getElementById('btnPresSkip').onclick = () => this.skipTempPuzzle();
+        
+        document.getElementById('btnSubmitPuzzle').onclick = () => this.evaluatePuzzle();
+        document.getElementById('btnExitPuzzle').onclick = () => this.exitPuzzleToNode();
+        
+        document.getElementById('hud-hints').onclick = () => this.requestHint();
+        document.getElementById('hud').style.display = "flex";
+        this.updateHUD();
+    }
 
-    btn.onclick = () => { window.AudioManager.playBlip(700); menu.classList.remove('hidden'); }
-    closeBtn.onclick = () => { window.AudioManager.playBlip(700); menu.classList.add('hidden'); }
+    updateHUD() {
+        document.getElementById('coin-count').innerText = this.state.points; // Mostrar picarats arriba
+    }
 
-    // Interacción Barras Wi-Fi
-    const attachBarsInteraction = (blocksQuery, callback) => {
-        blocksQuery.forEach((block, idx) => {
-            block.addEventListener('click', () => {
-                const val = block.getAttribute('data-val');
-                blocksQuery.forEach((b, bIdx) => {
-                    if(bIdx <= idx) b.classList.add('active');
-                    else b.classList.remove('active');
-                });
-                if(window.AudioManager) callback(val);
-                window.AudioManager.playBlip(900); // Feedback que toca el usuario
+    // --- MANEJO DE NOVELA VISUAL ---
+    loadDialog(nodeId) {
+        if(!nodeId) { alert("Fin de la Demo!!"); return; }
+        const n = this.data.dialogs[nodeId];
+        
+        if(n.pzl) {
+            this.setupPuzzleScreen(n.pzl);
+            return;
+        }
+
+        document.getElementById('s-dialog').classList.add('active');
+        document.getElementById('s-puzzle').classList.remove('active');
+        
+        // Limpiamos UI
+        document.getElementById('dlgCharAvatar').innerText = n.char;
+        document.getElementById('dlgCharName').innerText = n.name;
+        document.getElementById('dlgText').innerHTML = n.text;
+        
+        const optsDiv = document.getElementById('dlgOptions');
+        optsDiv.innerHTML = '';
+        
+        if(n.options && n.options.length > 0) {
+            n.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "submit-btn";
+                btn.innerText = opt.label;
+                btn.onclick = () => { window.AudioManager.playBlip(); this.loadDialog(opt.route); };
+                optsDiv.appendChild(btn);
             });
-        });
+        }
     }
 
-    // Inicializamos UI a 50% música y 75% sfx
-    musicBlocks[2].click(); // 50%
-    sfxBlocks[3].click();   // 75%
-
-    attachBarsInteraction(musicBlocks, (v) => window.AudioManager.setMusicVolume(v));
-    attachBarsInteraction(sfxBlocks,   (v) => window.AudioManager.setSfxVolume(v));
-
-    const hkContrast = document.getElementById('highContrast');
-    const hkTextSize = document.getElementById('textSize');
-
-    if (hkContrast) {
-        hkContrast.onchange = (e) => {
-            if (e.target.checked) document.body.classList.add('high-contrast');
-            else document.body.classList.remove('high-contrast');
-        };
+    // --- MANEJO DE ENIGMAS ---
+    setupPuzzleScreen(puzzleId) {
+        document.getElementById('s-dialog').classList.remove('active');
+        document.getElementById('s-puzzle').classList.add('active');
+        
+        const pData = this.data.puzzles[puzzleId];
+        this.state.activePuzzleId = puzzleId;
+        pData.currentMax = pData.currentMax || pData.maxPuntos;
+        
+        // Reset Hints
+        document.getElementById('hintArea').style.display = "none";
+        
+        // Show Presentation
+        document.getElementById('pzlActive').style.display = "none";
+        document.getElementById('presTitle').innerText = pData.title;
+        const pPts = document.getElementById('presPtsCount');
+        pPts.innerText = pData.currentMax;
+        document.getElementById('presPicarats').classList.remove('punish');
+        document.getElementById('btnPresStart').innerText = "Empezar Puzle";
+        document.getElementById('pzlPresentation').style.display = "flex";
     }
 
-    if (hkTextSize) {
-        hkTextSize.onchange = (e) => {
-            document.body.classList.remove('text-large', 'text-xlarge');
-            if (e.target.value === 'large') document.body.classList.add('text-large');
-            if (e.target.value === 'xlarge') document.body.classList.add('text-xlarge');
-        };
+    startPuzzleMinigame() {
+        window.AudioManager.startPuzzleMusic();
+        document.getElementById('pzlPresentation').style.display = "none";
+        document.getElementById('pzlActive').style.display = "block";
+        
+        const pData = this.data.puzzles[this.state.activePuzzleId];
+        document.getElementById('pzlHeaderTitle').innerText = pData.title.split(":")[0];
+        document.getElementById('pzlHeaderPicarats').innerText = pData.currentMax;
+        document.getElementById('pzlDesc').innerHTML = pData.description;
+        
+        // Instanciar juego dinámico
+        this.pzlInstance = new window.InteractivePuzzle(pData, document.getElementById('pzlInteractive'));
+    }
+
+    evaluatePuzzle() {
+        const isCorrect = this.pzlInstance.validate();
+        
+        const evalScreen = document.getElementById('eval-overlay');
+        evalScreen.style.display = "flex";
+        window.AudioManager.playBlip();
+
+        setTimeout(() => {
+            evalScreen.style.display = "none";
+            
+            if(isCorrect) {
+                 window.AudioManager.playCorrect();
+                 document.getElementById('winPicaratsCount').innerText = "+ " + this.data.puzzles[this.state.activePuzzleId].currentMax + " PICARATS";
+                 document.getElementById('eureka-overlay').classList.add('show');
+            } else {
+                 window.AudioManager.playWrong();
+                 document.getElementById('wrong-overlay').classList.add('show');
+            }
+        }, 1500);
+    }
+
+    handleFail() {
+        const pData = this.data.puzzles[this.state.activePuzzleId];
+        const oldMax = pData.currentMax;
+        const penalty = Math.max(1, Math.floor(pData.maxPuntos / 4));
+        pData.currentMax = Math.max(0, pData.currentMax - penalty);
+        
+        document.getElementById('pzlActive').style.display = "none";
+        document.getElementById('presPtsCount').innerText = oldMax;
+        document.getElementById('btnPresStart').innerText = "Reintentar";
+        document.getElementById('pzlPresentation').style.display = "flex";
+        
+        setTimeout(() => {
+            window.AudioManager.playBlip();
+            document.getElementById('presPicarats').classList.add('punish');
+            document.getElementById('presPtsCount').innerText = pData.currentMax;
+        }, 800);
+    }
+
+    finishPuzzleNode(isSuccess) {
+        const pData = this.data.puzzles[this.state.activePuzzleId];
+        if(isSuccess) {
+             this.state.points += pData.currentMax;
+             this.updateHUD();
+        }
+        window.AudioManager.stopAll();
+        this.loadDialog(isSuccess ? pData.winNode : pData.failNode);
+    }
+
+    exitPuzzleToNode() {
+        window.AudioManager.playBlip();
+        window.AudioManager.stopAll();
+        this.loadDialog(this.data.puzzles[this.state.activePuzzleId].failNode); // Ir al nodo fallback al salirse
+    }
+    
+    skipTempPuzzle() {
+        window.AudioManager.playBlip();
+        this.loadDialog(this.data.puzzles[this.state.activePuzzleId].failNode);
+    }
+
+    requestHint() {
+        if(!this.state.activePuzzleId) return;
+        window.AudioManager.playBlip();
+        document.getElementById('hintBoxText').innerText = this.data.puzzles[this.state.activePuzzleId].hint;
+        document.getElementById('hint-overlay').classList.add('show');
     }
 }
+
+window.onload = () => {
+    window.GameEngine = new GameEngineClass();
+    window.GameEngine.init();
+};
