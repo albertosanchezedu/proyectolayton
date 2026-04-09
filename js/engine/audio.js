@@ -112,26 +112,34 @@ function startOverworldMusic() {
     });
 }
 
-// ── PUZZLE TENSE THEME ── (Reloj tictac, marimbas repetitivas menores)
+// ── PUZZLE TENSE THEME ── (Reloj tictac, marimbas repetitivas menores variadas)
 function startPuzzleMusic() {
     initAudio(); stopAllMusic(); currentTrack = "puz"; globalBar = 0; globalTime = 0;
     const e = 60/130 / 2; // Rápido, corcheas
     setMusicVolume(0.25);
-    runSequence(e, 8, 4, (barIdx, t0) => { // Compás 4/4 dividido en 8 corcheas
-        // Tictac constante
+    runSequence(e, 8, 4, (barIdx, t0) => { 
         for(let i=0; i<8; i++) playTick(t0 + i*e);
         
-        // Bajo tenso pizzicato (Marimba grave)
-        const root = (barIdx % 2 === 0) ? N.Eb3 : N.Cb3;
+        // Estructura A B A C (ciclo de 4 compases)
+        const ciclo = barIdx % 4;
+        let root;
+        if(ciclo === 0 || ciclo === 2) root = N.Eb3;
+        else if (ciclo === 1) root = N.Cb3;
+        else root = N.Ab2; // Caída profunda al final
+
         playMarimba(root, t0, e, 0.1);
         playMarimba(root, t0 + 3*e, e, 0.06);
         playMarimba(root, t0 + 6*e, e, 0.08);
         
-        // Arpegio siniestro (Acordeòn o campanillas suaves)
-        if(barIdx % 4 === 3) {
+        if(ciclo === 1) {
             playMarimba(N.Bb4, t0+4*e, e, 0.05);
             playMarimba(N.Gb4, t0+5*e, e, 0.05);
             playMarimba(N.Eb4, t0+6*e, e, 0.05);
+        }
+        if(ciclo === 3) {
+            playMarimba(N.Db5, t0+2*e, e, 0.06);
+            playMarimba(N.Bb4, t0+4*e, e, 0.06);
+            playMarimba(N.Ab4, t0+6*e, e, 0.06);
         }
     });
 }

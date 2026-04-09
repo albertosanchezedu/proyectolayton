@@ -76,9 +76,9 @@ function setupAccessibilityMenu() {
         });
     }
 
-    // Inicializamos UI
-    musicBlocks[1].click(); // Set a 0.25 local UI
-    sfxBlocks[2].click();   // Set a 0.50 local UI
+    // Inicializamos UI a 50% música y 75% sfx
+    musicBlocks[2].click(); // 50%
+    sfxBlocks[3].click();   // 75%
 
     attachBarsInteraction(musicBlocks, (v) => window.AudioManager.setMusicVolume(v));
     attachBarsInteraction(sfxBlocks,   (v) => window.AudioManager.setSfxVolume(v));

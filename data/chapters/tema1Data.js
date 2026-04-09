@@ -1,4 +1,4 @@
-// DUMP COMPLETO DEL NUEVO TEMA BASADO EN SECUENCIA NARRATIVA
+// DUMP COMPLETO DEL TEMA 1: LOGÍSTICA DE ALMACÉN
 window.GameScenario_Tema1 = {
     "metadata": {
         "title": "Tema 1: Técnicas de Almacén",
@@ -6,63 +6,60 @@ window.GameScenario_Tema1 = {
     },
     "puzzles": {
         "pzl_001": {
-            "title": "Puzle 001: El Pedido Traspapelado",
-            "maxPuntos": 30,
+            "title": "Puzle 001: El Viajero Cansado",
+            "maxPuntos": 40,
             "type": "select_element",
-            "description": "Un lote crítico de ordenadores debe salir hoy. Nuestro sistema ha perdido la ubicación exacta, pero sabemos lo siguiente: <br><br>1. No están en el sector norte.<br>2. Se ubicaron cerca de mercancías de alta rotación (Categoría A).<br>3. Necesitan estar lejos de la humedad.<br><br>Observando nuestra configuración lógica, ¿en qué sector los ha dejado el operario?",
+            "description": "Se ha desconfigurado el algoritmo del Picking (el proceso que exige mayor organización y precisión para reducir costes).<br><br>Tenemos un pedido con 4 referencias en el mapa central. Para minimizar la distancia de recogida sin pasar dos veces por el mismo sitio (el clásico <i>Problema del Viajante</i>), ¿qué ruta es la óptima matemáticamente?",
             "options": [
-                { "id": "A", "icon": "📦", "label": "Sector A (Norte, Cerca de la puerta)" },
-                { "id": "B", "icon": "✨", "label": "Sector B (Centro, Control de clima, Alta rotación)" },
-                { "id": "C", "icon": "💧", "label": "Sector C (Sur, Alta rotación, Cámaras frías)" }
+                { "id": "A", "icon": "〰️", "label": "Zig-zag cruzando pasillos." },
+                { "id": "B", "icon": "🔄", "label": "Perimetral circular." },
+                { "id": "C", "icon": "⭐", "label": "Aleatoria por orden de peso." }
             ],
             "correctAnswer": "B",
-            "explanation": "Sector B es el único que cumple las tres reglas: es céntrico (no norte), es de alta rotación y no tiene problemas de humedad de cámaras frigoríficas. ¡Excelente deducción!",
+            "explanation": "El picking es el proceso más costoso. La ruta perimetral circular, o en U invertida, matemáticamente visita cada vértice sin retrocesos. Has evitado un retraso doloroso a la empresa.",
             "winNode": "despues_pzl1_win",
             "failNode": "despues_pzl1_fail"
         },
         "pzl_002": {
-            "title": "Puzle 002: Reacción Rápida",
+            "title": "Puzle 002: Identidad Robótica",
             "maxPuntos": 50,
-            "timeLimit": 15,
+            "timeLimit": 15, // QTE Bonus
             "type": "select_element",
-            "description": "¡Atención! Ha saltado una alarma de rotura de stock en la línea de 'Picking'. ¡Tienes apenas 15 segundos para dar la orden de reabastecimiento!<br><br>¿De dónde extraemos la mercancía para abastecer la línea de preparación?",
+            "description": "¡Atención! Un error de clúster! Necesitas configurar rápidamente los comunicadores de los operarios modernos.<br><br>Un picker lleva auriculares y recibe alertas verbales sobre sus extracciones sin mirar pantallas. ¿Qué tecnología de picking está utilizando?",
             "options": [
-                { "id": "R", "icon": "🏢", "label": "De la zona de Reserva / Almacenaje" },
-                { "id": "S", "icon": "🚛", "label": "De los camiones de salida" },
-                { "id": "D", "icon": "🛑", "label": "Del área de devoluciones" }
+                { "id": "R", "icon": "💡", "label": "Pick to Light" },
+                { "id": "S", "icon": "🎧", "label": "Pick by Voice" },
+                { "id": "D", "icon": "📶", "label": "Radiofrecuencia Visual" }
             ],
-            "correctAnswer": "R",
-            "explanation": "Correcto. La zona de reserva abastece a la zona de picking (preparación) cuando los estantes directos se vacían. ¡Has evitado una catástrofe logística en tiempo récord!",
+            "correctAnswer": "S",
+            "explanation": "¡Correcto! El Pick by Voice aumenta la productividad al permitir que el operario tenga los ojos y las manos totalmente libres para manipular las cajas.",
             "winNode": "despues_pzl2_win",
             "failNode": "despues_pzl2_fail"
         },
         "pzl_003": {
-            "title": "Puzle 003: La Carga Perecedera",
-            "maxPuntos": 30,
-            "type": "select_element",
-            "description": "Llega un camión refrigerado lleno de vacunas, que requiere un flujo tenso.<br>¿Qué estrategia de gestión de entrada y salida deberíamos aplicar por normativa sanitaria universal para este lote?",
-            "options": [
-                { "id": "LIFO", "icon": "🕒", "label": "LIFO (Lo último en entrar, primero en salir)" },
-                { "id": "FIFO", "icon": "🔄", "label": "FIFO (Lo primero en entrar, primero en salir)" },
-                { "id": "FEFO", "icon": "⚠️", "label": "FEFO (Lo primero en caducar, primero en salir)" }
-            ],
-            "correctAnswer": "FEFO",
-            "explanation": "¡Cierto! En productos farmacéuticos o muy perecederos, la fecha de caducidad es la prioridad absoluta por encima de la fecha de entrada. Has salvado muchas vidas.",
+            "title": "Puzle 003: El Correo Dañado",
+            "maxPuntos": 40,
+            "type": "fill_blanks",
+            "description": "Se ha interceptado un informe de almacén al proveedor. Varios términos técnicos se han vuelto ilegibles. Para mantener la confidencialidad, no podemos equivocarnos en las especificaciones.<br><br>Rellena los huecos del informe utilizando tus conocimientos sobre la protección de mercancías y tipos de picking.",
+            "textTemplate": "Estimado director, hemos implementado el picking mediante {0}, lo que nos permite enviar señales visuales para guiar al operario. A su vez, para el empaquetado de botellines de agua hemos empleado nuestra formadora {1} para el envase {2}. Quedamos a la espera.",
+            "options": ["Pick to Light", "Pick by Voice", "Wraparound", "Flejadora", "Terciario", "Secundario"],
+            "correctAnswer": "Pick to Light,Wraparound,Secundario",
+            "explanation": "¡Brillante logístico! El sistema Pick to Light es puramente visual mediante luces. Las máquinas Wraparound envuelven con cartón el conjunto, creando el envase secundario (como el famoso pack de latas/botellas).",
             "winNode": "despues_pzl3_win",
             "failNode": "despues_pzl3_fail"
         },
         "pzl_004": {
-            "title": "Puzle 004: Eficiencia de Transbordos",
-            "maxPuntos": 60,
+            "title": "Puzle 004: Jerarquía de Envolturas",
+            "maxPuntos": 40,
             "type": "select_element",
-            "description": "El director del centro logístico te pide reducir costes de almacenamiento temporal. Han recibido 5 palés mixtos de productos de campaña que ya están vendidos a diferentes clientes minoristas.<br><br>¿Cuál es la maniobra óptima?",
+            "description": "Revisa este albarán dañado. Un 'cartón con 12 botellines de agua'. Ese empaque específico de 12 botellines y su cartón es...",
             "options": [
-                { "id": "1", "icon": "📊", "label": "Clasificarlos y subirlos a las estanterías de mayor nivel." },
-                { "id": "2", "icon": "🏗️", "label": "Dejarlos en el muelle de entrada bloqueando la puerta." },
-                { "id": "3", "icon": "⚡", "label": "Cross-docking directo al muelle de salida." }
+                { "id": "1", "icon": "🧴", "label": "Envase Primario" },
+                { "id": "2", "icon": "📦", "label": "Envase Secundario" },
+                { "id": "3", "icon": "🚚", "label": "Envase Terciario (El Palé)" }
             ],
-            "correctAnswer": "3",
-            "explanation": "¡Impecable! Efectuar un Cross-docking elimina los gastos de almacenaje y manipulación intermedia para mercancía que ya tiene un destinatario final asignado.",
+            "correctAnswer": "2",
+            "explanation": "¡Impecable! El envase secundario es aquel que agrupa los primarios (los botellines) y se presenta para su venta al cliente o supermercado.",
             "winNode": "final_capitulo",
             "failNode": "despues_pzl4_fail"
         }
@@ -70,43 +67,43 @@ window.GameScenario_Tema1 = {
     // NARRATIVA LINEAL GUIADA (VISUAL NOVEL)
     "dialogs": {
         "start": {
-            "bg": "bg-void", // Empieza completamente oscuro
+            "bg": "bg-void", 
             "char": "layton",
-            "text": "La logística es como un mecanismo de relojería, Luke. Cada pieza debe encajar a la perfección, o todo el sistema colapsará.",
+            "text": "La preparación de pedidos es como un delicado enigma de relojería, Luke. Cada pieza debe encajar a la perfección, o todo el sistema colapsará.",
             "next": "n2"
         },
         "n2": {
             "char": "luke",
-            "text": "Cierto, Profesor Alberto. Pero este almacén está completamente a oscuras... ¿No deberían estar trabajando a este ritmo frenético?",
+            "text": "Cierto, Profesor. Pero el ERP no está enviando las órdenes al Sistema de Gestión (SGA)...",
             "next": "n3"
         },
         "n3": {
-            "bg": "bg-warehouse-abstract", // Transición a fondo visual abstracto con polígonos
+            "bg": "bg-warehouse-abstract", 
             "char": "layton",
-            "text": "Exactamente. Un apagón en sus servidores centrales lo ha detenido todo. Deberemos iluminar el camino con nuestro ingenio.",
+            "text": "Exactamente. Un fallo en los algoritmos WMS lo ha detenido todo. Deberemos aplicar teoría logística y nuestro ingenio puro.",
             "next": "n4"
         },
         "n4": {
             "char": "jefe",
-            "text": "[ERROR FATAL DEL SISTEMA WMS] Archivos corruptos detectados en el módulo de reservas. Intervención manual requerida.",
+            "text": "[ALERTA] Rutas de Picking descontroladas. Costes de preparación en aumento exponencial.",
             "next": "n5"
         },
         "n5": {
             "char": "layton",
-            "text": "Ahí tenemos nuestra primera tarea. Veamos qué datos podemos recuperar del sistema dañado.",
-            "action": "load_puzzle", // Salta al puzzle 1
+            "text": "Ahí tenemos nuestra primera tarea. Veamos cómo podemos restaurar la ruta óptima de este operario.",
+            "action": "load_puzzle", 
             "puzzleId": "pzl_001"
         },
         
         // RAMAS DEL PUZLE 1
         "despues_pzl1_win": {
             "char": "jefe",
-            "text": "[UBICACIÓN RESTAURADA] Lote localizado. Gracias por la asistencia.",
+            "text": "[RUTA RESTAURADA]. Aplicando Problema del Viajante. Distancias minimizadas.",
             "next": "p2_intro"
         },
         "despues_pzl1_fail": {
             "char": "layton",
-            "text": "Mmm, nos hemos equivocado. Si mandamos a los operarios allí, perderemos tiempo valioso. Debemos repensar nuestras variables.",
+            "text": "Mmm... Esa ruta nos haría pasar dos veces por el mismo cruce, Luke. Ese es precisamente el error más costoso del picking según la teoría. Debemos intentarlo de nuevo.",
             "action": "load_puzzle",
             "puzzleId": "pzl_001"
         },
@@ -114,13 +111,13 @@ window.GameScenario_Tema1 = {
         // INTRO PUZLE 2
         "p2_intro": {
             "char": "luke",
-            "text": "¡Profesor, mire esa pantalla de advertencia roja! ¡El sistema de preparación de pedidos está perdiendo stock!",
+            "text": "Profesor, mire esa pantalla de advertencia roja. ¡El sistema de guiado de los operarios se ha corrompido!",
             "next": "p2_intro2"
         },
         "p2_intro2": {
-            "bg": "bg-alert-abstract", // Cambio de color a rojo/alerta
+            "bg": "bg-alert-abstract",
             "char": "layton",
-            "text": "Un buen logístico debe actuar bajo presión, Luke. Toma los mandos, no nos queda tiempo.",
+            "text": "Un experto debe reaccionar bajo presión logística, Luke. Veamos si recuerdas los modelos de Picking actuales.",
             "action": "load_puzzle",
             "puzzleId": "pzl_002"
         },
@@ -129,13 +126,13 @@ window.GameScenario_Tema1 = {
         "despues_pzl2_win": {
             "bg": "bg-warehouse-abstract",
             "char": "luke",
-            "text": "Estuvo cerca... La reposición ha llegado justo a tiempo antes de que parasen las cintas.",
+            "text": "¡Pick by Voice! Estuvo cerca... La comunicación por micrófono ha restaurado el trabajo manos-libres a tiempo.",
             "next": "p3_intro"
         },
         "despues_pzl2_fail": {
             "bg": "bg-alert-abstract",
             "char": "layton",
-            "text": "Eso solo empeorará las cosas. Luke, concéntrate, volvamos a darle la orden al sistema del almacén.",
+            "text": "Eso confundirá a los preparadores y aumentarán los parones. Vuelve al terminal de control.",
             "action": "load_puzzle",
             "puzzleId": "pzl_002"
         },
@@ -143,12 +140,12 @@ window.GameScenario_Tema1 = {
         // INTRO PUZLE 3
         "p3_intro": {
             "char": "jefe",
-            "text": "[NUEVO CONTENEDOR EN EL MUELLE 4]. Requiere procesamiento sanitario inmediato.",
+            "text": "[ERROR MAQUINARIA]. Equipos de Acondicionamiento detenidos por configuración manual errónea.",
             "next": "p3_i2"
         },
         "p3_i2": {
             "char": "layton",
-            "text": "Esto es un asunto delicado. Las normativas de rotación para este tipo de productos son muy estrictas en la Unión Europea. Veamos si lo recuerdas.",
+            "text": "Acondicionar los productos y asegurar el guiado inteligente es vital. Recuperemos ese correo extraviado reconstruyendo los fragmentos, Luke.",
             "action": "load_puzzle",
             "puzzleId": "pzl_003"
         },
@@ -156,30 +153,31 @@ window.GameScenario_Tema1 = {
         // RAMAS PUZLE 3
         "despues_pzl3_win": {
             "char": "luke",
-            "text": "¡FEFO! Es lógico. No podemos arriesgarnos con bienes perecederos.",
+            "text": "¡Pick to light y Wraparound! Todo encaja. Los envases secundarios fluirán nuevamente.",
             "next": "p4_intro"
         },
         "despues_pzl3_fail": {
             "char": "jefe",
-            "text": "[INFRACCIÓN SANITARIA DETECTADA]. Reverting action...",
-            "next": "p3_i2"
+            "text": "[FALLO ESTRUCTURAL]. Conceptos logísticos incoherentes o vacíos. Procedimiento abortado.",
+            "action": "load_puzzle",
+            "puzzleId": "pzl_003"
         },
 
         // INTRO PUZLE 4
         "p4_intro": {
             "bg": "bg-blue-abstract",
             "char": "layton",
-            "text": "El almacén está cobrando vida de nuevo. Pero la verdadera prueba de un experto en técnica de almacén es la optimización de los flujos físicos.",
+            "text": "Nuestras cadenas vuelven a engranar. Ya solo nos falta revisar el Etiquetado y la Jerarquía de Envases.",
             "next": "p4_i2"
         },
         "p4_i2": {
             "char": "luke",
-            "text": "Nos llegan 5 palés nuevos del Muelle 1, y los transportistas del Muelle 8 los están esperando. ¿Subimos eso a las estanterías altas?",
+            "text": "Profesor, el muelle final tiene envíos de agua embotellada. Sus identificadores se han mezclado.",
             "next": "p4_i3"
         },
         "p4_i3": {
             "char": "layton",
-            "text": "Medítalo un segundo antes de actuar. Las manipulaciones innecesarias son nuestro mayor enemigo.",
+            "text": "Es nuestra última prueba. Categorizar correctamente entre envase primario, secundario y terciario evitará el caos total.",
             "action": "load_puzzle",
             "puzzleId": "pzl_004"
         },
@@ -187,7 +185,7 @@ window.GameScenario_Tema1 = {
         // RAMAS PUZLE 4
         "despues_pzl4_fail": {
             "char": "layton",
-            "text": "Eso generaría retrasos inaceptables para el cliente. Vuelve a replantear el flujo.",
+            "text": "Piénsalo mejor, Luke. El envase en contacto directo es el primario, pero este paquete agrupa varios de ellos...",
             "action": "load_puzzle",
             "puzzleId": "pzl_004"
         },
@@ -195,17 +193,17 @@ window.GameScenario_Tema1 = {
         "final_capitulo": {
             "bg": "bg-gold-abstract",
             "char": "jefe",
-            "text": "[SISTEMA WMS EN LÍNEA]. Operativa nominal restaurada al 100%.",
+            "text": "[SISTEMA WMS EN LÍNEA]. Operativa nominal restaurada al 100%. Mermas evitadas.",
             "next": "fin2"
         },
         "fin2": {
             "char": "luke",
-            "text": "¡Lo logramos, Profesor! Todo marcha sobre ruedas.",
+            "text": "¡Lo logramos, Profesor! La protección, empaquetado y picking corren sobre ruedas.",
             "next": "fin3"
         },
         "fin3": {
             "char": "layton",
-            "text": "Como siempre, todo enigma logístico tiene solución si aplicamos un riguroso razonamiento lógico. Excelente en este capítulo.",
+            "text": "Como siempre, todo enigma logístico tiene solución si aplicamos un riguroso razonamiento deductivo. Excelente trabajo en este almacén.",
             "next": null
         }
     }

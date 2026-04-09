@@ -35,8 +35,14 @@ class PuzzleSystem {
         });
 
         this.btnSubmit.addEventListener('click', () => {
-            if(!this.currentSelection) {
-                // Generamos un dialog temporal estilo layton
+            // Evaluamos fill_blanks aqui rapido para ver si esta vacio
+            if (this.currentPuzzle && this.currentPuzzle.type === 'fill_blanks') {
+                const selects = Array.from(this.interactiveArea.querySelectorAll('.pz-dropdown'));
+                if(selects.some(s => s.value === "")) {
+                     window.GameDialog.startDialog({"start": {char: "luke", text: "¡Profesor! Me he saltado huecos por rellenar en el pergamino.", next:null}}, "start");
+                     return;
+                }
+            } else if(!this.currentSelection) {
                 const errDialog = {
                     "start": {char: "luke", text: "¡Profesor! Aún no he marcado ninguna decisión lógica en el pergamino.", next:null}
                 };
@@ -149,53 +155,131 @@ class PuzzleSystem {
                 this.interactiveArea.appendChild(box);
             });
         }
+        else if (pzData.type === 'fill_blanks') {
+            this.currentSelection = null; // Se calcula en validacion
+            
+            let htmlForm = `<p style="font-size: 1.3rem; line-height: 1.8; color: var(--dark); padding: 20px; border: 2px dashed var(--gold); border-radius: 8px; background: rgba(255,255,255,0.6); max-width:800px; text-align:left;">`;
+            
+            // Reemplazar {0}, {1} con selects
+            let parts = pzData.textTemplate.split(/(\{\d+\})/g);
+            parts.forEach(part => {
+                if (part.match(/\{\d+\}/)) {
+                    htmlForm += `<select class="pz-dropdown" style="font-family:var(--font-heading); font-size:1.1rem; padding:4px; margin:0 5px; border:2px solid var(--wood); border-radius:4px; color:var(--dark); font-weight:bold; outline:none; cursor:pointer;">
+                                    <option value="" disabled selected>--- Elegir ---</option>
+                                    ${pzData.options.map(o => `<option value="${o}">${o}</option>`).join('')}
+                                 </select>`;
+                } else {
+                    htmlForm += part;
+                }
+            });
+            htmlForm += `</p>`;
+            
+            this.interactiveArea.innerHTML = htmlForm;
+            
+            // Feedback sonoro al cambiar
+            Array.from(this.interactiveArea.querySelectorAll('.pz-dropdown')).forEach(sel => {
+                sel.addEventListener('change', () => { window.AudioManager.playBlip(800); });
+            });
+        }
     }
 
     validate() {
         clearInterval(this.timerInterval);
-        const isCorrect = this.currentSelection === this.currentPuzzle.correctAnswer;
-        this.closePuzzle();
-
-        if (isCorrect) {
-            window.AudioManager.playCorrect(); 
-            window.SaveSystem.data.puzzlesSolved++;
-            
-            let pts = this.currentPuzzle.maxPuntos;
-            // QTE Bonus
-            if(this.currentPuzzle.timeLimit && this.currentTimeLeft > 0) {
-                const bonus = Math.floor((this.currentTimeLeft / this.currentPuzzle.timeLimit) * this.maxBonus);
-                pts += bonus;
-            }
-            
-            window.SaveSystem.data.ingenioPoints += pts;
-            window.SaveSystem.updateHUD();
-
-            // Salta al nodo de victoria en narrativa
-            if (this.currentPuzzle.winNode) {
-                window.GameDialog.resumeTemp();
-                window.GameDialog.loadNode(this.currentPuzzle.winNode);
-            }
-        } else {
-            window.AudioManager.playWrong(); 
-            // Salta al nodo de fallo en narrativa
-            if (this.currentPuzzle.failNode) {
-                window.GameDialog.resumeTemp();
-                window.GameDialog.loadNode(this.currentPuzzle.failNode);
+        
+        // Obtener estado si es de rellenar huecos
+        if (this.currentPuzzle.type === 'fill_blanks') {
+            const selects = Array.from(this.interactiveArea.querySelectorAll('.pz-dropdown'));
+            if(selects.some(s => s.value === "")) {
+                this.currentSelection = null; // Forzará el fallo por estar vacio en setupEvents? No, si le damos a enviar saltaría vacio, asi que validamos normal como falso o bloqueamos.
+            } else {
+                this.currentSelection = selects.map(s => s.value).join(',');
             }
         }
+        
+        const isCorrect = this.currentSelection === this.currentPuzzle.correctAnswer;
+        
+        // Esconder controles normales
+        this.interactiveArea.style.display = 'none';
+        document.querySelector('.puzzle-footer').style.display = 'none';
+
+        const suspenseDiv = document.createElement('div');
+        suspenseDiv.className = 'suspense-anim';
+        suspenseDiv.style.textAlign = "center";
+        suspenseDiv.style.padding = "40px";
+        suspenseDiv.innerHTML = `<h1 style="font-family: var(--font-heading); font-size:3rem; font-style:italic;">Analizando deducción...</h1>`;
+        this.textBody.parentNode.appendChild(suspenseDiv);
+
+        window.AudioManager.playBlip(300);
+        let ticks = 0;
+        let tickInt = setInterval(() => { window.AudioManager.playBlip(300 + (ticks*20)); ticks++; }, 400);
 
         setTimeout(() => {
-            window.AudioManager.startOverworldMusic();
-        }, 1000); 
+            clearInterval(tickInt);
+            if (isCorrect) {
+                window.AudioManager.playCorrect(); 
+                suspenseDiv.innerHTML = `<h1 style="color:var(--gold); font-family: var(--font-heading); font-size:4rem;">¡Correcto!</h1><p style="font-size:1.5rem;">${this.currentPuzzle.explanation}</p>`;
+                
+                window.SaveSystem.data.puzzlesSolved++;
+                let pts = this.currentPuzzle.maxPuntos;
+                if(this.currentPuzzle.timeLimit && this.currentTimeLeft > 0) {
+                    const bonus = Math.floor((this.currentTimeLeft / this.currentPuzzle.timeLimit) * this.maxBonus);
+                    pts += bonus;
+                    suspenseDiv.innerHTML += `<p style="color:#2ecc71; font-weight:bold;">¡Bonificación de tiempo: +${bonus}!</p>`;
+                }
+                
+                window.SaveSystem.data.ingenioPoints += pts;
+                window.SaveSystem.updateHUD();
+
+                setTimeout(() => {
+                    this.closePuzzle();
+                    suspenseDiv.remove();
+                    this.interactiveArea.style.display = '';
+                    document.querySelector('.puzzle-footer').style.display = '';
+                    if (this.currentPuzzle.winNode) {
+                        window.GameDialog.resumeTemp();
+                        window.GameDialog.loadNode(this.currentPuzzle.winNode);
+                    }
+                    window.AudioManager.startOverworldMusic();
+                }, 5000);
+
+            } else {
+                window.AudioManager.playWrong(); 
+                
+                // Penalizacion proporcional de Picarats
+                const prevPoints = this.currentPuzzle.maxPuntos;
+                const optionsCount = (this.currentPuzzle.options || []).length || 2;
+                const newPoints = Math.max(0, prevPoints - Math.floor(prevPoints / optionsCount));
+                this.currentPuzzle.maxPuntos = newPoints;
+                
+                suspenseDiv.innerHTML = `<h1 style="color:#e74c3c; font-family: var(--font-heading); font-size:4rem;">¡Falso!</h1>
+                                         <p style="font-size:1.5rem;">Puntos de Ingenio reducidos: ${prevPoints} ➔ <b style="color:red">${newPoints}</b></p>`;
+                
+                setTimeout(() => {
+                    suspenseDiv.remove();
+                    this.interactiveArea.style.display = '';
+                    document.querySelector('.puzzle-footer').style.display = '';
+                    this.currentSelection = null;
+                    this.picarats.innerText = newPoints;
+                    
+                    Array.from(this.interactiveArea.children).forEach(c => {
+                        c.style.borderColor = 'var(--wood)';
+                        c.style.background = '#fff';
+                        c.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                    });
+                    
+                    // Restaura el QTE si lo habia para evitar bugs
+                    if (this.currentPuzzle.timeLimit) {
+                         this.currentTimeLeft = this.currentPuzzle.timeLimit;
+                         this.startTimerIfAny();
+                    }
+                }, 3500);
+            }
+        }, 2200);
     }
 
     closePuzzle() {
         clearInterval(this.timerInterval);
         this.screen.classList.add('hidden');
-        if(window.GameDraw) {
-            window.GameDraw.clearCanvas(); 
-            window.GameDraw.disablePizarra();
-        }
     }
 }
 
