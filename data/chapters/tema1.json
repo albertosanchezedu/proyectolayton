@@ -1,63 +1,101 @@
 {
     "metadata": {
-        "title": "Tema 1: Técnicas de Almacén - Introducción",
-        "totalPuzzles": 1
+        "title": "Tema 1: Técnicas de Almacén - Introducción POV",
+        "totalPuzzles": 2
     },
     "scene": {
-        "background": "assets/bg_almacen_1.jpg",
+        "background": "assets/bg_modern_warehouse_1.jpg",
         "elements": [
             {
                 "id": "jefe_almacen",
                 "type": "character",
-                "name": "Jefe de Almacén",
-                "emoji": "👷",
+                "name": "A. Logistics",
+                "emoji": "🤖",
                 "x": "40%",
-                "y": "50%",
+                "y": "55%",
                 "dialogId": "hablar_jefe"
             },
             {
                 "id": "caja_sospechosa",
                 "type": "puzzle",
-                "name": "Lote desordenado",
+                "name": "Puzle: Lote Fantasma",
                 "emoji": "📦",
-                "x": "75%",
-                "y": "65%",
+                "x": "60%",
+                "y": "70%",
                 "puzzleId": "pzl_001"
+            },
+            {
+                "id": "palet_caido",
+                "type": "puzzle",
+                "name": "Puzle: El cross-docking fallido",
+                "emoji": "🚜",
+                "x": "85%",
+                "y": "50%",
+                "puzzleId": "pzl_002"
             },
             {
                 "id": "moneda_oculta",
                 "type": "coin",
-                "name": "Superficie polvo",
+                "name": "Luz LED fundida",
                 "emoji": "✨",
-                "x": "20%",
-                "y": "80%"
+                "x": "15%",
+                "y": "25%"
             }
         ]
     },
     "puzzles": {
         "pzl_001": {
-            "title": "Puzle 001: El Lote Perdido",
+            "title": "Puzle 001: El Lote Fantasma",
             "maxPuntos": 30,
             "type": "select_element",
-            "description": "El Jefe de almacén agrupó cajas usando el sistema FIFO (First In, First Out). Sin embargo, una de estas cajas corresponde a un producto perecedero que entró ayer y se ha colocado detrás de cajas que entraron hoy.<br><br><b>¿Cuál es la caja que rompe la norma FIFO?</b> (Consejo: usa la Pizarrita para tachar)",
+            "description": "El Jefe A. Linguistics (NPC total) estaba usando puro sistema LIFO en lugar de FIFO para productos perecederos. Literalmente un error de noobs. <br><br>Tenemos 3 cajas de aguacates. <br>Entradas: Lote X (Hace 3 días), Lote Y (Hace 2 días), Lote Z (Ayer). <br><br>Si usas <b>FIFO</b> correctamente para que no se pudran, <b>¿qué lote mandas primero al área de picking?</b>",
             "options": [
-                { "id": "A", "icon": "📦", "label": "Lote A (Entrado: Hoy)" },
-                { "id": "B", "icon": "📦", "label": "Lote B (Entrado: Ayer)" },
-                { "id": "C", "icon": "📦", "label": "Lote C (Entrado: Hoy)" }
+                { "id": "X", "icon": "🥑", "label": "Lote X" },
+                { "id": "Y", "icon": "🥑", "label": "Lote Y" },
+                { "id": "Z", "icon": "🥑", "label": "Lote Z" }
+            ],
+            "correctAnswer": "X",
+            "explanation": "El sistema FIFO ('First in, First out') de manual obliga a dar salida a lo más viejo (Lote X) que llegó hace 3 días. POV: salvaste la comida."
+        },
+        "pzl_002": {
+            "title": "Puzle 002: El Cross-docking Fallido",
+            "maxPuntos": 40,
+            "type": "select_element",
+            "description": "Un influencer pidió un aro de luz. Resulta que entró como cross-docking puro. Bro, esa mercancía ni siquiera debería ir a estantería, debería ir... <br><br><b>¿A qué zona para salir volando en la furgoneta de reparto?</b>",
+            "options": [
+                { "id": "A", "icon": "🏢", "label": "Zona Almacenaje Profundo" },
+                { "id": "B", "icon": "🚚", "label": "Muelles de Salida directos" },
+                { "id": "C", "icon": "📸", "label": "Zona de Cuarentena" }
             ],
             "correctAnswer": "B",
-            "explanation": "El sistema FIFO dice que lo primero en entrar debe ser lo primero en salir. El Lote B entró ayer, por lo que debería estar el primero en la línea, ¡no escondido tras las cajas de hoy!"
+            "explanation": "La magia del cross-docking es que no se almacena: va del muelle de entrada, se consolida, y directo a los muelles de expedición / salida. ¡Ahorras pasta y tiempo!"
         }
     },
     "dialogs": {
         "intro": {
-            "start": { "char": "layton", "text": "Ah, el Almacén de Tránsito Central. Un engranaje fundamental en la distribución de mercancías.", "next": "node2" },
-            "node2": { "char": "luke", "text": "¡Profesor! Todo parece en orden, pero noto a los trabajadores un poco tensos.", "next": "node3" },
-            "node3": { "char": "layton", "text": "Echémosle un vistazo, deberíamos hablar con el Jefe de Almacén. (Pulsa sobre él)", "next": null }
+            "start": { "char": "layton", "text": "Un almacén ultra-moderno... Neones, robots automatizados... Qué aesthetic todo.", "next": "node2" },
+            "node2": { "char": "luke", "text": "Profe, estoy flipando. Pero los operarios están corriendo de un lado a otro. Hay muchísimo salseo aquí hoy.", "next": "node3" },
+            "node3": { "char": "layton", "text": "Parece que la supply chain ha crasheado. Hablemos con el Manager robótico de allí para que nos ponga en contexto.", "next": null }
         },
         "hablar_jefe": {
-            "start": { "char": "jefe", "text": "Los albaranes no cuadran... Tenemos un problema de rotación muy grave.", "next": "node2" },
-            "node2": { "char": "layton", "text": "Tranquilo, encontraremos la solución. ¿Veo que hay unas cajas sospechosas a la derecha?", "next": null }
+            "start": { "char": "jefe", "text": "BEEP. BOOP. Bro, el software WMS está hiper-buggeado. Literal, mis KPIs se van a hundir.", "next": "opciones" },
+            "opciones": {
+                "char": "layton",
+                "choices": [
+                    { "text": "Chill de pana. Te ayudamos.", "next": "ayuda" },
+                    { "text": "¿Y esas cajas de ahí?", "next": "cajas" }
+                ]
+            },
+            "ayuda": {
+                "char": "jefe",
+                "text": "BOOP. Necesito reestructurar el Cross-docking y la rotación FIFO. Haz clic en las anomalías del almacén (los emojis brillantes) para resolverlo.",
+                "next": null
+            },
+            "cajas": {
+                "char": "jefe",
+                "text": "BEEP. Son un lío de cojones. Un becario ordenó el perecedero en plan LIFO.",
+                "next": null
+            }
         }
     }
 }

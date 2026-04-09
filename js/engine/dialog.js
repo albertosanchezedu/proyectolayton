@@ -1,66 +1,59 @@
 /**
- * Sistema de Diálogos
- * Controla la aparición secuencial del texto, sonido de escritura, e interacciones.
+ * Engine de Diálogos Refinado (Estilo Layton Moderno + Web Audio)
  */
-
 class DialogSystem {
     constructor() {
         this.overlay = document.getElementById('dialogOverlay');
+        this.backdrop = document.getElementById('dialogBackdrop'); // Fondo oscuro
         this.portrait = document.getElementById('dialogPortrait');
         this.nameLabel = document.getElementById('dialogName');
         this.textBox = document.getElementById('dialogText');
         this.arrow = document.getElementById('dialogArrow');
         this.choicesContainer = document.getElementById('dialogChoices');
-        this.dialogBox = document.querySelector('.dialog-box');
+        this.dialogBox = document.getElementById('dialogBox');
 
-        // Estado interno
         this.isActive = false;
         this.isTyping = false;
         this.currentFullText = "";
-        this.currentCharacterIndex = 0;
         this.typewriterTimeout = null;
         
-        // Referencia a los datos de la conversación actual
         this.currentDialogNodes = {};
         this.currentNodeId = null;
-        
-        // Callbacks
         this.onDialogEnd = null;
 
-        // Base de personajes (esto puede luego cargarse del JSON)
+        // Personajes Modernizados
         this.characterDB = {
-            "layton": { name: "Profesor", emoji: "🎩", color: "#ffd27f", voice: 400 },
-            "luke":   { name: "Luke", emoji: "🧢", color: "#9bcdff", voice: 700 },
-            "jefe":   { name: "Jefe Almacén", emoji: "👷", color: "#ffaa00", voice: 300 },
-            "cocinero": { name: "Cocinero", emoji: "🍳", color: "#eeeeee", voice: 450 },
-            "unknown": { name: "???", emoji: "👤", color: "#aaaaaa", voice: 500 }
+            "layton": { name: "Profe Alberto", emoji: "😎", color: "#38bdf8", voice: 400 },
+            "luke":   { name: "Alumno GenZ", emoji: "🧢", color: "#fca5a5", voice: 750 },
+            "jefe":   { name: "A. Logistics (NPC)", emoji: "🤖", color: "#fcd34d", voice: 300 },
+            "unknown": { name: "???", emoji: "👤", color: "#94a3b8", voice: 500 }
         };
 
-        this.setupEventListeners();
+        this.setupEvents();
     }
 
-    setupEventListeners() {
-        // Al hacer click sobre la caja principal del diálogo
-        this.dialogBox.addEventListener('click', () => {
-            if (!this.isActive) return;
-
-            if (this.isTyping) {
-                // Skip y mostrar todo
-                this.skipTyping();
-            } else {
-                // Avanzar si no hay opciones en pantalla
-                if (this.choicesContainer.classList.contains('hidden')) {
-                    this.advanceDialog();
-                }
+    setupEvents() {
+        // Clicar para avanzar
+        this.dialogBox.addEventListener('click', () => this.next());
+        
+        // Espacio para avanzar
+        document.addEventListener('keydown', (e) => {
+            if (this.isActive && e.code === "Space") {
+                e.preventDefault();
+                this.next();
             }
         });
     }
 
     startDialog(dialogNodes, startNodeId = "start", callback = null) {
+        if(!dialogNodes || !dialogNodes[startNodeId]) return;
+        
         this.currentDialogNodes = dialogNodes;
         this.isActive = true;
-        this.overlay.classList.remove('hidden');
         this.onDialogEnd = callback;
+        
+        this.overlay.classList.remove('hidden');
+        this.backdrop.classList.remove('hidden');
         
         this.loadNode(startNodeId);
     }
@@ -74,112 +67,121 @@ class DialogSystem {
             return;
         }
 
-        // Limpiar UI
-        this.arrow.classList.add('hidden');
+        // Determinar si es un nodo puramente de opciones
+        if (node.choices && !node.text) {
+            this.showChoices(node.choices);
+            return; // No hay texto que escribir
+        }
+
+        // Limpieza
+        this.arrow.classList.remove('showArrow');
         this.choicesContainer.classList.add('hidden');
         this.choicesContainer.innerHTML = '';
-        this.textBox.innerHTML = '';
+        this.textBox.textContent = '';
 
-        // Definir personaje
+        // Personaje
         const charData = this.characterDB[node.char] || this.characterDB["unknown"];
-        this.nameLabel.innerText = charData.name;
-        this.nameLabel.style.color = charData.color;
-        this.portrait.innerText = charData.emoji;
-
-        // Configurar texto a escribir
-        this.currentFullText = node.text || "...";
-        this.currentCharacterIndex = 0;
+        this.nameLabel.textContent = charData.name;
+        this.nameLabel.style.borderColor = charData.color; // Detalle estético
+        this.portrait.textContent = charData.emoji;
         this.activeVoiceFreq = charData.voice;
 
-        // Iniciar escritura
-        this.isTyping = true;
-        this.portrait.classList.add('talking');
-        this.typeNextChar();
-    }
-
-    typeNextChar() {
-        if (!this.isTyping) return;
-
-        if (this.currentCharacterIndex < this.currentFullText.length) {
-            const char = this.currentFullText.charAt(this.currentCharacterIndex);
-            
-            // Añadir carácter al div
-            this.textBox.innerHTML += char;
-            this.currentCharacterIndex++;
-
-            // Reproducir sonido "blip" aleatoriamente para simular habla
-            if (char.trim() !== "" && Math.random() > 0.4) {
-                if(window.AudioManager) window.AudioManager.playBlip(this.activeVoiceFreq);
-            }
-
-            // Calcular pausa
-            let speed = parseFloat(document.body.classList.contains('text-xlarge') ? 15 : 25) + Math.random() * 10;
-            if (char === '.' || char === ',' || char === '!' || char === '?') {
-                speed += 150; // Pausa dramática en signos de puntuación
-            }
-
-            this.typewriterTimeout = setTimeout(() => this.typeNextChar(), speed);
-        } else {
-            // Fin de la escritura
-            this.finishTyping();
-        }
-    }
-
-    skipTyping() {
-        clearTimeout(this.typewriterTimeout);
-        this.textBox.innerHTML = this.currentFullText;
-        this.isTyping = false;
-        this.finishTyping();
-    }
-
-    finishTyping() {
-        this.isTyping = false;
-        this.portrait.classList.remove('talking');
+        this.currentFullText = node.text || "...";
         
-        const node = this.currentDialogNodes[this.currentNodeId];
+        // Iniciar Typewriter
+        let i = 0;
+        this.isTyping = true;
+        
+        const write = () => {
+            if (i < this.currentFullText.length) {
+                const c = this.currentFullText[i];
+                this.textBox.textContent += c;
+                this.portrait.classList.add("talking");
 
-        if (node.choices && node.choices.length > 0) {
-            // Mostrar opciones
-            this.showChoices(node.choices);
+                // Sonido de tipeo estilo Layton (playBlip de Web Audio sin repetirse robótico)
+                if (c !== " " && Math.random() > 0.25) {
+                    if(window.AudioManager) window.AudioManager.playBlip(this.activeVoiceFreq);
+                }
+
+                i++;
+                let speed = parseFloat(document.body.classList.contains('text-xlarge') ? 15 : 25) + Math.random() * 10;
+                if (c === "." || c === ",") speed += 80;
+
+                this.typewriterTimeout = setTimeout(write, speed);
+            } else {
+                this.isTyping = false;
+                this.portrait.classList.remove("talking");
+                this.arrow.classList.add("showArrow");
+                
+                // Mostrar opciones al final si las hay incrustadas en este nodo de texto
+                if (node.choices) {
+                    this.showChoices(node.choices);
+                }
+            }
+        };
+
+        write();
+    }
+
+    next() {
+        if (!this.isActive) return;
+
+        // Si hay opciones en pantalla, el click no debe avanzar, el usuario debe clicar una opción
+        if (!this.choicesContainer.classList.contains('hidden')) return; 
+
+        if (this.isTyping) {
+            // Saltarse la escritura
+            clearTimeout(this.typewriterTimeout);
+            this.textBox.textContent = this.currentFullText;
+            this.isTyping = false;
+            this.portrait.classList.remove("talking");
+            this.arrow.classList.add("showArrow");
+            
+            const node = this.currentDialogNodes[this.currentNodeId];
+            if (node.choices) this.showChoices(node.choices);
         } else {
-            // Mostrar flechita de continuar
-            this.arrow.classList.remove('hidden');
+            // Avanzar al siguiente nodo
+            const node = this.currentDialogNodes[this.currentNodeId];
+            if (node.next) {
+                this.loadNode(node.next);
+            } else {
+                this.endDialog();
+            }
         }
     }
 
     showChoices(choices) {
+        this.choicesContainer.innerHTML = '';
         this.choicesContainer.classList.remove('hidden');
+
+        // Quitamos la flecha de avance porque obligamos a elegir
+        this.arrow.classList.remove('showArrow');
+
         choices.forEach(choice => {
-            const btn = document.createElement('button');
-            btn.className = 'choice-btn';
-            btn.innerText = choice.text;
+            const btn = document.createElement("div");
+            btn.className = "choice-btn";
+            btn.textContent = choice.text;
+
             btn.onclick = (e) => {
-                e.stopPropagation(); // Evitar click en dialogBox principal
+                e.stopPropagation();
                 if (choice.triggerEvent) {
-                     // Lanzar un evento global si la opción lo indica (p.ej iniciar puzzle)
-                     window.dispatchEvent(new CustomEvent(choice.triggerEvent, { detail: choice.triggerData }));
+                    // Por si necesitamos eventos globales para puzles
+                    window.dispatchEvent(new CustomEvent(choice.triggerEvent, { detail: choice.triggerData }));
                 }
+                this.choicesContainer.classList.add('hidden');
                 this.loadNode(choice.next);
             };
+
             this.choicesContainer.appendChild(btn);
         });
-    }
-
-    advanceDialog() {
-        const node = this.currentDialogNodes[this.currentNodeId];
-        if (node.next) {
-            this.loadNode(node.next);
-        } else {
-            this.endDialog();
-        }
     }
 
     endDialog() {
         this.isActive = false;
         this.overlay.classList.add('hidden');
+        this.backdrop.classList.add('hidden');
         if (this.onDialogEnd) this.onDialogEnd();
     }
 }
 
-// Inicializar global
 window.GameDialog = new DialogSystem();

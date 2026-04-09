@@ -1,8 +1,4 @@
-/**
- * Motor base de Puzles
- * Renderiza dinámicamente un puzle cargado del JSON.
- */
-
+/* Ajustes Puzzle para el layout clásico novel con TRANSICIONES */
 class PuzzleSystem {
     constructor() {
         this.screen = document.getElementById('puzzleScreen');
@@ -10,24 +6,28 @@ class PuzzleSystem {
         this.picarats = document.getElementById('pzlPicarats');
         this.textBody = document.getElementById('pzlParams');
         this.interactiveArea = document.getElementById('pzlInteractive');
-        
         this.btnLeave = document.getElementById('btnLeavePuzzle');
         this.btnSubmit = document.getElementById('btnSubmitPuzzle');
 
-        this.currentPuzzle = null;
-        this.currentSelection = null; // Para guardar lo que toca el usuario
+        this.transitionOverlay = document.getElementById('transitionOverlay');
+        this.transitionText = document.getElementById('transitionText');
 
+        this.currentPuzzle = null;
+        this.currentSelection = null; 
         this.setupEvents();
     }
 
     setupEvents() {
         this.btnLeave.addEventListener('click', () => {
+            window.AudioManager.playBlip(500);
             this.closePuzzle();
         });
 
         this.btnSubmit.addEventListener('click', () => {
             if(!this.currentSelection) {
-                alert("Debes seleccionar una opción primero o marcar una respuesta.");
+                window.GameDialog.startDialog({
+                    start: {char: "luke", text: "¡Profesor! Aún no has dado con una respuesta del cuadro.", next:null}
+                }, "start");
                 return;
             }
             this.validate();
@@ -42,22 +42,36 @@ class PuzzleSystem {
         this.currentSelection = null;
         
         this.title.innerText = pzData.title;
-        // Puntos de penalización lógica
-        let points = pzData.maxPuntos;
-        this.picarats.innerText = points;
-
+        this.picarats.innerText = pzData.maxPuntos;
         this.textBody.innerHTML = pzData.description;
         
         this.buildInteractiveArea(pzData);
 
-        this.screen.classList.remove('hidden');
-        window.AudioManager.stopMusic(); // Para enfatizar que entramos en modo pensar (se puede cambiar al tema de puzzle alternativo)
+        this.playTransitionAnimation();
+    }
+
+    playTransitionAnimation() {
+        // Suena el jingle característico de "¿Un puzle?!"
+        window.AudioManager.playPuzzleTransitionJingle();
+
+        // Limpiamos opacidades previas
+        this.transitionOverlay.classList.remove('play');
+        // Trigger reflow (CSS trick)
+        void this.transitionOverlay.offsetWidth;
+        
+        this.transitionOverlay.classList.add('play');
+
+        // Durante el cierre de diafragma negro (al 50% de la animación, o sea ~750ms), 
+        // cambiamos el contexto subyacente.
+        setTimeout(() => {
+            this.screen.classList.remove('hidden');
+            window.AudioManager.startPuzzleMusic(); // Corta el overworld, mete tema tenso de puzle.
+        }, 750);
     }
 
     buildInteractiveArea(pzData) {
         this.interactiveArea.innerHTML = '';
         
-        // Fase 2 simple: puzzles tipo "Selecciona la caja incorrecta"
         if(pzData.type === 'select_element') {
             pzData.options.forEach(opt => {
                 const box = document.createElement('div');
@@ -65,20 +79,29 @@ class PuzzleSystem {
                 box.style.flexDirection = 'column';
                 box.style.alignItems = 'center';
                 box.style.cursor = 'pointer';
-                box.style.padding = '20px';
-                box.style.border = '4px solid transparent';
-                box.style.borderRadius = '10px';
-                box.style.background = 'rgba(255,255,255,0.5)';
-                box.style.margin = '10px';
+                box.style.padding = '15px 30px';
+                box.style.border = '2px solid var(--wood)';
+                box.style.borderRadius = '4px';
+                box.style.background = '#fff';
+                box.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                box.style.fontFamily = 'var(--font-heading)';
+                box.style.transition = 'all 0.2s';
 
-                box.innerHTML = `<span style="font-size: 4rem;">${opt.icon}</span><br><b>${opt.label}</b>`;
+                box.innerHTML = `<span style="font-size: 3.5rem;">${opt.icon}</span><br><b style="margin-top:10px; font-size:1.1rem; color:var(--dark);">${opt.label}</b>`;
 
                 box.onclick = () => {
-                    // Reset others
-                    Array.from(this.interactiveArea.children).forEach(c => c.style.borderColor = 'transparent');
-                    box.style.borderColor = '#c98835'; // Accent color
+                    Array.from(this.interactiveArea.children).forEach(c => {
+                        c.style.borderColor = 'var(--wood)';
+                        c.style.background = '#fff';
+                        c.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                    });
+                    
+                    box.style.borderColor = 'var(--gold)';
+                    box.style.background = 'rgba(200, 150, 12, 0.1)';
+                    box.style.boxShadow = '0 0 0 2px rgba(200, 150, 12, 0.3)';
+                    
                     this.currentSelection = opt.id;
-                    window.AudioManager.playBlip(700);
+                    window.AudioManager.playBlip(700); // feedback sonoro click opcion
                 };
 
                 this.interactiveArea.appendChild(box);
@@ -88,31 +111,38 @@ class PuzzleSystem {
 
     validate() {
         const isCorrect = this.currentSelection === this.currentPuzzle.correctAnswer;
-        
         this.closePuzzle();
 
-        // Lanzar diálogo de validación
         const dialogNode = isCorrect ? "win" : "fail";
         const validationDialog = {
-            "start": { "char": "layton", "text": "Veamos tu respuesta...", "next": dialogNode },
-            "win": { "char": "layton", "text": `¡Correcto! ${this.currentPuzzle.explanation}`, "next": null },
-            "fail": { "char": "luke", "text": "¡Ups! Me temo que esa no es la respuesta correcta.", "next": null }
+            "start": { "char": "layton", "text": "Observemos tu razonamiento...", "next": dialogNode },
+            "win": { "char": "layton", "text": `¡Excelente deducción! ${this.currentPuzzle.explanation}`, "next": null },
+            "fail": { "char": "luke", "text": "Mmm, creo que algo falla en ese argumento, Profesor. Deberíamos revisarlo y volver a intentarlo.", "next": null }
         };
 
         window.GameDialog.startDialog(validationDialog, "start", () => {
             if(isCorrect) {
-                 window.AudioManager.playCorrect();
+                 window.AudioManager.playCorrect(); // Música apoteósica "Correcto"
                  window.SaveSystem.data.puzzlesSolved++;
                  window.SaveSystem.data.ingenioPoints += this.currentPuzzle.maxPuntos;
                  window.SaveSystem.updateHUD();
+            } else {
+                 window.AudioManager.playWrong(); // Disonancia bajista
             }
-            window.AudioManager.startMusic();
+            // Vuelve el Overworld calmado
+            setTimeout(() => {
+                window.AudioManager.startOverworldMusic();
+            }, 1000); 
         });
     }
 
     closePuzzle() {
         this.screen.classList.add('hidden');
-        window.GameDraw.clearCanvas(); // Limpiar dibujos
+        if(window.GameDraw) {
+            window.GameDraw.clearCanvas(); 
+            window.GameDraw.disablePizarra();
+        }
+        window.AudioManager.startOverworldMusic(); // vuelve al theme relajado si sale sin hacer submit
     }
 }
 

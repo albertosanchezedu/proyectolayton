@@ -1,5 +1,5 @@
 /**
- * Lógica principal del juego.
+ * Lógica principal unificadora del juego clásico.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -7,12 +7,11 @@ document.addEventListener('DOMContentLoaded', () => {
     window.SaveSystem.load();
 
     document.getElementById('btnStart').addEventListener('click', async () => {
-        // Inicializa audio por interacción de usuario imperativa
         window.AudioManager.init();
         
-        // Efecto visual salida título
         const startScrn = document.getElementById('startScreen');
         startScrn.style.opacity = '0';
+        
         setTimeout(async () => {
             startScrn.classList.remove('active');
             startScrn.classList.add('hidden');
@@ -22,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             window.AudioManager.startMusic();
             await loadChapter('data/chapters/tema1.json');
-        }, 500);
+        }, 500); 
     });
 });
 
@@ -31,22 +30,19 @@ async function loadChapter(jsonPath) {
         const response = await fetch(jsonPath);
         const chapterData = await response.json();
         
-        // Guardamos todo en window.GameData para acceso del Engine de puzzles
         window.GameData = chapterData;
-
         window.SaveSystem.data.totalPuzzles = chapterData.metadata.totalPuzzles;
         window.SaveSystem.updateHUD();
 
-        // Renderizado del Almacén real
+        document.getElementById('sceneBackground').style.backgroundImage = `url('${chapterData.scene.background}')`;
+        
         renderScene(chapterData.scene);
 
-        // Lanzar diálogo intro
         if (chapterData.dialogs && chapterData.dialogs.intro) {
             setTimeout(() => {
                 window.GameDialog.startDialog(chapterData.dialogs.intro, "start");
-            }, 800);
+            }, 500);
         }
-
     } catch (e) {
         console.error("Error cargando capítulo:", e);
     }
@@ -59,13 +55,16 @@ function renderScene(sceneData) {
     sceneData.elements.forEach(el => {
         const div = document.createElement('div');
         div.className = 'interactable';
-        div.innerText = el.emoji; // Seguiremos usando emojis como marcadores visuales accesibles 
         div.style.left = el.x;
         div.style.top = el.y;
-        div.title = el.name;
+
+        div.innerHTML = `
+            <div class="emoji-art">${el.emoji}</div>
+            <div class="name-tag">${el.name}</div>
+        `;
 
         div.onclick = () => {
-            window.AudioManager.playBlip(900);
+            window.AudioManager.playBlip(900); // Sonido UI
             
             if (el.type === 'character' && el.dialogId) {
                 if(window.GameData.dialogs[el.dialogId]) {
@@ -73,14 +72,14 @@ function renderScene(sceneData) {
                 }
             } else if (el.type === 'puzzle') {
                 window.GameDialog.startDialog({
-                    start: { char: "layton", text: "¡Ah! ¡Un rompecabezas oculto! Vamos a resolverlo...", next: null }
+                    start: { char: "layton", text: "Este enigma requiere nuestra atención. Vamos a desentrañarlo.", next: null }
                 }, "start", () => {
                     window.GamePuzzle.loadPuzzle(el.puzzleId);
                 });
             } else if (el.type === 'coin') {
                 window.SaveSystem.addCoin();
                 div.remove(); 
-                window.AudioManager.playCorrect(); // Campanitas felices
+                window.AudioManager.playCorrect();
             }
         };
 
@@ -93,12 +92,37 @@ function setupAccessibilityMenu() {
     const menu = document.getElementById('accessibilityMenu');
     const closeBtn = document.getElementById('closeAccessibility');
     
+    // Controles táctiles Custom
+    const musicBlocks = document.querySelectorAll('#musicVolBars .vol-bar');
+    const sfxBlocks = document.querySelectorAll('#sfxVolBars .vol-bar');
+
+    btn.onclick = () => { window.AudioManager.playBlip(700); menu.classList.remove('hidden'); }
+    closeBtn.onclick = () => { window.AudioManager.playBlip(700); menu.classList.add('hidden'); }
+
+    // Interacción Barras Wi-Fi
+    const attachBarsInteraction = (blocksQuery, callback) => {
+        blocksQuery.forEach((block, idx) => {
+            block.addEventListener('click', () => {
+                const val = block.getAttribute('data-val');
+                blocksQuery.forEach((b, bIdx) => {
+                    if(bIdx <= idx) b.classList.add('active');
+                    else b.classList.remove('active');
+                });
+                if(window.AudioManager) callback(val);
+                window.AudioManager.playBlip(900); // Feedback que toca el usuario
+            });
+        });
+    }
+
+    // Inicializamos UI
+    musicBlocks[1].click(); // Set a 0.25 local UI
+    sfxBlocks[2].click();   // Set a 0.50 local UI
+
+    attachBarsInteraction(musicBlocks, (v) => window.AudioManager.setMusicVolume(v));
+    attachBarsInteraction(sfxBlocks,   (v) => window.AudioManager.setSfxVolume(v));
+
     const hkContrast = document.getElementById('highContrast');
     const hkTextSize = document.getElementById('textSize');
-    const volMusic = document.getElementById('musicVolume');
-
-    btn.onclick = () => menu.classList.remove('hidden');
-    closeBtn.onclick = () => menu.classList.add('hidden');
 
     hkContrast.onchange = (e) => {
         if (e.target.checked) document.body.classList.add('high-contrast');
@@ -110,8 +134,4 @@ function setupAccessibilityMenu() {
         if (e.target.value === 'large') document.body.classList.add('text-large');
         if (e.target.value === 'xlarge') document.body.classList.add('text-xlarge');
     };
-
-    volMusic.oninput = (e) => {
-        window.AudioManager.setVolume(e.target.value);
-    }
 }
