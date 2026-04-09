@@ -8,26 +8,31 @@
     <link rel="stylesheet" href="css/dialog.css">
 </head>
 <body>
-    <button id="btnAccessibility" class="accessibility-toggle" aria-label="Abrir menú de accesibilidad">⚙️ Accesibilidad</button>
+    <button id="btnAccessibility" class="accessibility-toggle" aria-label="Abrir menú de accesibilidad">⚙️ Ajustes</button>
 
     <div id="accessibilityMenu" class="accessibility-menu hidden">
-        <h2>Ajustes de Accesibilidad</h2>
+        <h2>Ajustes y Accesibilidad</h2>
         <div class="setting-group">
-            <label for="highContrast">Alto Contraste</label>
+            <label for="musicVolume">🎶 Volumen Música</label>
+            <input type="range" id="musicVolume" min="0" max="1" step="0.05" value="0.25">
+        </div>
+        <div class="setting-group" style="flex-direction: row; justify-content: space-between;">
+            <label for="highContrast">👁️ Alto Contraste</label>
             <input type="checkbox" id="highContrast">
         </div>
         <div class="setting-group">
-            <label for="textSize">Tamaño de Texto</label>
+            <label for="textSize">📄 Tamaño de Texto</label>
             <select id="textSize">
                 <option value="normal">Normal</option>
                 <option value="large">Grande</option>
                 <option value="xlarge">Muy Grande</option>
             </select>
         </div>
-        <button id="closeAccessibility" class="btn">Cerrar</button>
+        <button id="closeAccessibility" class="btn" style="width: 100%; margin-top: 10px;">Cerrar</button>
     </div>
 
-    <div id="gameHUD" class="hud">
+    <!-- HUD de métricas -->
+    <div id="gameHUD" class="hud hidden">
         <div class="hud-item" title="Puzles encontrados">🔍 <span id="puzzlesFound">0</span>/<span id="totalPuzzles">0</span></div>
         <div class="hud-item" title="Puzles resueltos">🧩 <span id="puzzlesSolved">0</span></div>
         <div class="hud-item" title="Monedas (Bonus)">🪙 <span id="coinsCount">0</span></div>
@@ -35,17 +40,56 @@
     </div>
 
     <div id="gameContainer" class="game-container">
+        
+        <!-- PANTALLA INICIO ESTILIZADA -->
         <div id="startScreen" class="screen active">
-            <h1>Misterio en el Almacén de Tránsito</h1>
-            <p>Haz clic para comenzar y activar el audio</p>
-            <button id="btnStart" class="btn btn-large">Iniciar Tarea</button>
+            <div class="title-box">
+                <h1>El Misterio del Almacén</h1>
+                <p>Una aventura de técnicas y logística</p>
+                <button id="btnStart" class="btn btn-large">Iniciar Capítulo</button>
+            </div>
         </div>
 
+        <!-- CAPA DE ESCENA (Visión en 1ª persona) -->
         <div id="sceneScreen" class="screen hidden">
-            <div id="sceneBackground" class="scene-bg"></div>
+            <!-- Imagen de fondo que generamos -->
+            <div id="sceneBackground" class="scene-bg" style="background-image: url('assets/bg_almacen_1.jpg');"></div>
             <div id="sceneInteractables" class="scene-interactables"></div>
         </div>
 
+        <!-- CAPA DE PUZZLE (Superposición Fase 2) -->
+        <div id="puzzleScreen" class="screen hidden">
+            <div class="puzzle-container">
+                <div class="puzzle-header">
+                    <h2 id="pzlTitle">Puzle 001</h2>
+                    <div class="picarats">Puntos: <span id="pzlPicarats">30</span> pts</div>
+                </div>
+                <div class="puzzle-body">
+                    <div id="pzlParams" class="puzzle-text">
+                        Encuentra la caja mal dispuesta...
+                    </div>
+                    <!-- Área lúdica -->
+                    <div id="pzlInteractive" class="puzzle-interactive">
+                        <!-- Las cajas irán aquí -->
+                    </div>
+                </div>
+                <!-- Capa Pizarra (Canvas) -->
+                <canvas id="canvasOverlay" width="1000" height="800"></canvas>
+                <div class="canvas-tools">
+                    <button id="btnPencil" class="tool-btn active">✏️ Dibujar</button>
+                    <button id="btnEraser" class="tool-btn">🧽 Borrar</button>
+                    <button id="btnClearDraw" class="tool-btn">🗑️ Limpiar Todo</button>
+                </div>
+
+                <div class="puzzle-footer">
+                    <button id="btnToggleDraw" class="tool-btn">📝 Pizarrita</button>
+                    <button id="btnLeavePuzzle" class="tool-btn">Desistir</button>
+                    <button id="btnSubmitPuzzle" class="btn">✓ Enviar Respuesta</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CAPA DE DIÁLOGOS LAYTON -->
         <div id="dialogOverlay" class="dialog-overlay hidden">
             <div class="dialog-box">
                 <div class="dialog-character">
@@ -59,12 +103,14 @@
             </div>
             <div id="dialogChoices" class="dialog-choices hidden"></div>
         </div>
+        
     </div>
 
-    <!-- Scripts -->
     <script src="js/engine/audio.js"></script>
     <script src="js/engine/save.js"></script>
     <script src="js/engine/dialog.js"></script>
+    <script src="js/engine/draw.js"></script>
+    <script src="js/engine/puzzle.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>

@@ -1,6 +1,5 @@
 /**
  * Lógica principal del juego.
- * Carga el escenario y orquesta los engine files.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -8,18 +7,23 @@ document.addEventListener('DOMContentLoaded', () => {
     window.SaveSystem.load();
 
     document.getElementById('btnStart').addEventListener('click', async () => {
-        // Obligatorio hacer init por las reestricciones de Web Audio en navegadores
+        // Inicializa audio por interacción de usuario imperativa
         window.AudioManager.init();
         
-        document.getElementById('startScreen').classList.remove('active');
-        document.getElementById('startScreen').classList.add('hidden');
-        
-        document.getElementById('sceneScreen').classList.remove('hidden');
+        // Efecto visual salida título
+        const startScrn = document.getElementById('startScreen');
+        startScrn.style.opacity = '0';
+        setTimeout(async () => {
+            startScrn.classList.remove('active');
+            startScrn.classList.add('hidden');
+            
+            document.getElementById('gameHUD').classList.remove('hidden');
+            document.getElementById('sceneScreen').classList.remove('hidden');
 
-        // Empezamos la carga del capítulo
-        await loadChapter('data/chapters/tema1.json');
+            window.AudioManager.startMusic();
+            await loadChapter('data/chapters/tema1.json');
+        }, 500);
     });
-
 });
 
 async function loadChapter(jsonPath) {
@@ -27,23 +31,24 @@ async function loadChapter(jsonPath) {
         const response = await fetch(jsonPath);
         const chapterData = await response.json();
         
-        // Iniciar valores del HUD
+        // Guardamos todo en window.GameData para acceso del Engine de puzzles
+        window.GameData = chapterData;
+
         window.SaveSystem.data.totalPuzzles = chapterData.metadata.totalPuzzles;
         window.SaveSystem.updateHUD();
 
-        // Cargar personajes en la escena (Interactables)
+        // Renderizado del Almacén real
         renderScene(chapterData.scene);
 
-        // Lanzar diálogo de introducción
+        // Lanzar diálogo intro
         if (chapterData.dialogs && chapterData.dialogs.intro) {
             setTimeout(() => {
                 window.GameDialog.startDialog(chapterData.dialogs.intro, "start");
-            }, 500);
+            }, 800);
         }
 
     } catch (e) {
         console.error("Error cargando capítulo:", e);
-        alert("Ocurrió un error al cargar el capítulo.");
     }
 }
 
@@ -51,35 +56,31 @@ function renderScene(sceneData) {
     const interactablesContainer = document.getElementById('sceneInteractables');
     interactablesContainer.innerHTML = '';
     
-    // Aquí pondremos el fondo si estuviese definido en image (placeholder css)
-    // document.getElementById('sceneBackground').style.backgroundImage = `url(${sceneData.background})`;
-
     sceneData.elements.forEach(el => {
         const div = document.createElement('div');
         div.className = 'interactable';
-        div.innerText = el.emoji; // Marcador visual temporal
+        div.innerText = el.emoji; // Seguiremos usando emojis como marcadores visuales accesibles 
         div.style.left = el.x;
         div.style.top = el.y;
-        div.title = el.name; // Accesibilidad básica por hover
+        div.title = el.name;
 
         div.onclick = () => {
-            // Animación de click y sonido base
             window.AudioManager.playBlip(900);
             
             if (el.type === 'character' && el.dialogId) {
-                // Asumiendo que el diálogo existe en una variable global o lo volvemos a pasar
-                // Para este prototipo, simularemos la re-obtención del JSON
-                fetch('data/chapters/tema1.json')
-                  .then(r => r.json())
-                  .then(data => {
-                      if(data.dialogs[el.dialogId]) {
-                          window.GameDialog.startDialog(data.dialogs[el.dialogId], "start");
-                      }
-                  });
+                if(window.GameData.dialogs[el.dialogId]) {
+                    window.GameDialog.startDialog(window.GameData.dialogs[el.dialogId], "start");
+                }
+            } else if (el.type === 'puzzle') {
+                window.GameDialog.startDialog({
+                    start: { char: "layton", text: "¡Ah! ¡Un rompecabezas oculto! Vamos a resolverlo...", next: null }
+                }, "start", () => {
+                    window.GamePuzzle.loadPuzzle(el.puzzleId);
+                });
             } else if (el.type === 'coin') {
                 window.SaveSystem.addCoin();
-                div.remove(); // Desaparece la moneda
-                alert('¡Has encontrado una moneda de bonificación!');
+                div.remove(); 
+                window.AudioManager.playCorrect(); // Campanitas felices
             }
         };
 
@@ -94,6 +95,7 @@ function setupAccessibilityMenu() {
     
     const hkContrast = document.getElementById('highContrast');
     const hkTextSize = document.getElementById('textSize');
+    const volMusic = document.getElementById('musicVolume');
 
     btn.onclick = () => menu.classList.remove('hidden');
     closeBtn.onclick = () => menu.classList.add('hidden');
@@ -108,4 +110,8 @@ function setupAccessibilityMenu() {
         if (e.target.value === 'large') document.body.classList.add('text-large');
         if (e.target.value === 'xlarge') document.body.classList.add('text-xlarge');
     };
+
+    volMusic.oninput = (e) => {
+        window.AudioManager.setVolume(e.target.value);
+    }
 }

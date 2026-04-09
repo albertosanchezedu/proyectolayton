@@ -1,7 +1,7 @@
 {
     "metadata": {
         "title": "Tema 1: Técnicas de Almacén - Introducción",
-        "totalPuzzles": 3
+        "totalPuzzles": 1
     },
     "scene": {
         "background": "assets/bg_almacen_1.jpg",
@@ -16,13 +16,13 @@
                 "dialogId": "hablar_jefe"
             },
             {
-                "id": "cocinero",
-                "type": "character",
-                "name": "Cocinero del Hámster",
-                "emoji": "🍳",
-                "x": "70%",
-                "y": "60%",
-                "dialogId": "hablar_cocinero"
+                "id": "caja_sospechosa",
+                "type": "puzzle",
+                "name": "Lote desordenado",
+                "emoji": "📦",
+                "x": "75%",
+                "y": "65%",
+                "puzzleId": "pzl_001"
             },
             {
                 "id": "moneda_oculta",
@@ -34,64 +34,30 @@
             }
         ]
     },
+    "puzzles": {
+        "pzl_001": {
+            "title": "Puzle 001: El Lote Perdido",
+            "maxPuntos": 30,
+            "type": "select_element",
+            "description": "El Jefe de almacén agrupó cajas usando el sistema FIFO (First In, First Out). Sin embargo, una de estas cajas corresponde a un producto perecedero que entró ayer y se ha colocado detrás de cajas que entraron hoy.<br><br><b>¿Cuál es la caja que rompe la norma FIFO?</b> (Consejo: usa la Pizarrita para tachar)",
+            "options": [
+                { "id": "A", "icon": "📦", "label": "Lote A (Entrado: Hoy)" },
+                { "id": "B", "icon": "📦", "label": "Lote B (Entrado: Ayer)" },
+                { "id": "C", "icon": "📦", "label": "Lote C (Entrado: Hoy)" }
+            ],
+            "correctAnswer": "B",
+            "explanation": "El sistema FIFO dice que lo primero en entrar debe ser lo primero en salir. El Lote B entró ayer, por lo que debería estar el primero en la línea, ¡no escondido tras las cajas de hoy!"
+        }
+    },
     "dialogs": {
         "intro": {
-            "start": {
-                "char": "layton",
-                "text": "Ah, el Almacén de Tránsito Central. Un engranaje fundamental en la distribución de mercancías.",
-                "next": "node2"
-            },
-            "node2": {
-                "char": "luke",
-                "text": "¡Profesor! Todo parece en orden, pero noto a los trabajadores un poco tensos.",
-                "next": "node3"
-            },
-            "node3": {
-                "char": "layton",
-                "text": "Buena observación, Luke. Echémosle un vistazo, deberíamos hablar con el Jefe de Almacén.",
-                "next": null
-            }
+            "start": { "char": "layton", "text": "Ah, el Almacén de Tránsito Central. Un engranaje fundamental en la distribución de mercancías.", "next": "node2" },
+            "node2": { "char": "luke", "text": "¡Profesor! Todo parece en orden, pero noto a los trabajadores un poco tensos.", "next": "node3" },
+            "node3": { "char": "layton", "text": "Echémosle un vistazo, deberíamos hablar con el Jefe de Almacén. (Pulsa sobre él)", "next": null }
         },
         "hablar_jefe": {
-            "start": {
-                "char": "jefe",
-                "text": "Ufff... los albaranes no cuadran. Las fechas de caducidad del lote 4B están mal registradas.",
-                "next": "opciones"
-            },
-            "opciones": {
-                "char": "layton",
-                "choices": [
-                    { "text": "¿En qué puedo ayudarle?", "next": "ayuda" },
-                    { "text": "Parece un puzle interesante...", "next": "puzle" }
-                ]
-            },
-            "ayuda": {
-                "char": "jefe",
-                "text": "Eres muy amable. Si pudieras revisar la rotación FIFO de la línea 2, me harías un favor.",
-                "next": null
-            },
-            "puzle": {
-                "char": "jefe",
-                "text": "Ojalá lo fuera. Aunque ahora que lo dices, este problema de reubicación parece un rompecabezas.",
-                "next": "lanzar_puzle"
-            },
-            "lanzar_puzle": {
-                "char": "layton",
-                "text": "Permítame echarle un vistazo... (Este diálogo lanzará el Puzle 001 en la siguiente fase).",
-                "next": null
-            }
-        },
-        "hablar_cocinero": {
-            "start": {
-                "char": "cocinero",
-                "text": "Ey... tú no has visto nada. No hay ninguna mascota en esta cocina...",
-                "next": "node2"
-            },
-            "node2": {
-                "char": "luke",
-                "text": "¡Profesor, pero si se le asoma la bolita por el bolsillo delantal!",
-                "next": null
-            }
+            "start": { "char": "jefe", "text": "Los albaranes no cuadran... Tenemos un problema de rotación muy grave.", "next": "node2" },
+            "node2": { "char": "layton", "text": "Tranquilo, encontraremos la solución. ¿Veo que hay unas cajas sospechosas a la derecha?", "next": null }
         }
     }
 }
