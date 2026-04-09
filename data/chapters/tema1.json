@@ -1,0 +1,97 @@
+{
+    "metadata": {
+        "title": "Tema 1: Técnicas de Almacén - Introducción",
+        "totalPuzzles": 3
+    },
+    "scene": {
+        "background": "assets/bg_almacen_1.jpg",
+        "elements": [
+            {
+                "id": "jefe_almacen",
+                "type": "character",
+                "name": "Jefe de Almacén",
+                "emoji": "👷",
+                "x": "40%",
+                "y": "50%",
+                "dialogId": "hablar_jefe"
+            },
+            {
+                "id": "cocinero",
+                "type": "character",
+                "name": "Cocinero del Hámster",
+                "emoji": "🍳",
+                "x": "70%",
+                "y": "60%",
+                "dialogId": "hablar_cocinero"
+            },
+            {
+                "id": "moneda_oculta",
+                "type": "coin",
+                "name": "Superficie polvo",
+                "emoji": "✨",
+                "x": "20%",
+                "y": "80%"
+            }
+        ]
+    },
+    "dialogs": {
+        "intro": {
+            "start": {
+                "char": "layton",
+                "text": "Ah, el Almacén de Tránsito Central. Un engranaje fundamental en la distribución de mercancías.",
+                "next": "node2"
+            },
+            "node2": {
+                "char": "luke",
+                "text": "¡Profesor! Todo parece en orden, pero noto a los trabajadores un poco tensos.",
+                "next": "node3"
+            },
+            "node3": {
+                "char": "layton",
+                "text": "Buena observación, Luke. Echémosle un vistazo, deberíamos hablar con el Jefe de Almacén.",
+                "next": null
+            }
+        },
+        "hablar_jefe": {
+            "start": {
+                "char": "jefe",
+                "text": "Ufff... los albaranes no cuadran. Las fechas de caducidad del lote 4B están mal registradas.",
+                "next": "opciones"
+            },
+            "opciones": {
+                "char": "layton",
+                "choices": [
+                    { "text": "¿En qué puedo ayudarle?", "next": "ayuda" },
+                    { "text": "Parece un puzle interesante...", "next": "puzle" }
+                ]
+            },
+            "ayuda": {
+                "char": "jefe",
+                "text": "Eres muy amable. Si pudieras revisar la rotación FIFO de la línea 2, me harías un favor.",
+                "next": null
+            },
+            "puzle": {
+                "char": "jefe",
+                "text": "Ojalá lo fuera. Aunque ahora que lo dices, este problema de reubicación parece un rompecabezas.",
+                "next": "lanzar_puzle"
+            },
+            "lanzar_puzle": {
+                "char": "layton",
+                "text": "Permítame echarle un vistazo... (Este diálogo lanzará el Puzle 001 en la siguiente fase).",
+                "next": null
+            }
+        },
+        "hablar_cocinero": {
+            "start": {
+                "char": "cocinero",
+                "text": "Ey... tú no has visto nada. No hay ninguna mascota en esta cocina...",
+                "next": "node2"
+            },
+            "node2": {
+                "char": "luke",
+                "text": "¡Profesor, pero si se le asoma la bolita por el bolsillo delantal!",
+                "next": null
+            }
+        }
+    }
+}

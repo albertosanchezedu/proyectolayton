@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proyecto Layton - Técnicas de Almacén</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dialog.css">
+</head>
+<body>
+    <button id="btnAccessibility" class="accessibility-toggle" aria-label="Abrir menú de accesibilidad">⚙️ Accesibilidad</button>
+
+    <div id="accessibilityMenu" class="accessibility-menu hidden">
+        <h2>Ajustes de Accesibilidad</h2>
+        <div class="setting-group">
+            <label for="highContrast">Alto Contraste</label>
+            <input type="checkbox" id="highContrast">
+        </div>
+        <div class="setting-group">
+            <label for="textSize">Tamaño de Texto</label>
+            <select id="textSize">
+                <option value="normal">Normal</option>
+                <option value="large">Grande</option>
+                <option value="xlarge">Muy Grande</option>
+            </select>
+        </div>
+        <button id="closeAccessibility" class="btn">Cerrar</button>
+    </div>
+
+    <div id="gameHUD" class="hud">
+        <div class="hud-item" title="Puzles encontrados">🔍 <span id="puzzlesFound">0</span>/<span id="totalPuzzles">0</span></div>
+        <div class="hud-item" title="Puzles resueltos">🧩 <span id="puzzlesSolved">0</span></div>
+        <div class="hud-item" title="Monedas (Bonus)">🪙 <span id="coinsCount">0</span></div>
+        <div class="hud-item" title="Puntos de Ingenio">⭐ <span id="ingenioPoints">0</span></div>
+    </div>
+
+    <div id="gameContainer" class="game-container">
+        <div id="startScreen" class="screen active">
+            <h1>Misterio en el Almacén de Tránsito</h1>
+            <p>Haz clic para comenzar y activar el audio</p>
+            <button id="btnStart" class="btn btn-large">Iniciar Tarea</button>
+        </div>
+
+        <div id="sceneScreen" class="screen hidden">
+            <div id="sceneBackground" class="scene-bg"></div>
+            <div id="sceneInteractables" class="scene-interactables"></div>
+        </div>
+
+        <div id="dialogOverlay" class="dialog-overlay hidden">
+            <div class="dialog-box">
+                <div class="dialog-character">
+                    <div id="dialogPortrait" class="portrait">👤</div>
+                    <div id="dialogName" class="name">Desconocido</div>
+                </div>
+                <div class="dialog-content">
+                    <p id="dialogText" class="text-content"></p>
+                    <div id="dialogArrow" class="dialog-arrow hidden">▼</div>
+                </div>
+            </div>
+            <div id="dialogChoices" class="dialog-choices hidden"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/engine/audio.js"></script>
+    <script src="js/engine/save.js"></script>
+    <script src="js/engine/dialog.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

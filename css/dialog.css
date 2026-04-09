@@ -1,0 +1,107 @@
+/* Sistema de diálogo inspirado en el Profesor Layton */
+.dialog-overlay {
+    position: absolute;
+    bottom: 5%;
+    left: 10%;
+    width: 80%;
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dialog-box {
+    display: flex;
+    background: var(--ui-bg);
+    border: 4px solid var(--border-color);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0px 5px 15px rgba(0,0,0,0.8);
+    position: relative;
+    cursor: pointer;
+}
+
+/* Retrato del personaje */
+.dialog-character {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 120px;
+    border-right: 2px solid var(--border-color);
+    padding-right: 20px;
+    margin-right: 20px;
+}
+.portrait {
+    font-size: 4rem;
+    line-height: 1;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 5px #000;
+}
+.name {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--accent-color);
+    text-align: center;
+}
+
+/* Animación de hablar (bote) */
+.talking {
+    animation: bounce 0.15s infinite alternate ease-in-out;
+}
+@keyframes bounce {
+    from { transform: translateY(0); }
+    to { transform: translateY(-10px); }
+}
+
+/* Contenido del Diálogo */
+.dialog-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-size: 1.3rem;
+    line-height: 1.5;
+    position: relative;
+}
+
+.text-content {
+    margin: 0;
+    min-height: 2em;
+}
+
+/* Flecha de avance */
+.dialog-arrow {
+    position: absolute;
+    bottom: -10px; right: 0;
+    color: var(--accent-color);
+    font-size: 1.5rem;
+    animation: blink 1s infinite;
+}
+@keyframes blink {
+    0%, 100% { opacity: 1; transform: translateY(0); }
+    50% { opacity: 0; transform: translateY(5px); }
+}
+
+/* Opciones de Elección */
+.dialog-choices {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+}
+.choice-btn {
+    background: var(--ui-bg);
+    border: 2px solid var(--border-color);
+    color: var(--text-color);
+    padding: 12px 25px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1.2rem;
+    transition: all 0.2s;
+}
+.choice-btn:hover {
+    background: var(--btn-hover);
+    transform: translateX(-10px);
+}
