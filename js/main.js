@@ -1,171 +1,166 @@
-class GameEngineClass {
+class GameApp {
     constructor() {
-        this.data = window.GameData;
-        this.state = { points: 0, coins: 5, activePuzzleId: null };
-        this.pzlInstance = null;
-    }
-
-    init() {
-        // UI Bindings
-        document.getElementById('btnStartGame').onclick = () => {
-            if(document.getElementById('chkAudio').checked) window.AudioManager.init();
-            document.getElementById('s-intro').classList.remove('active');
-            this.loadDialog("start");
+        window.AduioSys.init();
+        document.getElementById('hudLayer').style.display = "flex";
+        
+        // Controls
+        document.getElementById('btnStartPuzle').onclick = () => this.launchPuzle();
+        document.getElementById('btnSkipPuzle').onclick = () => { 
+            window.AduioSys.playBlip(400); 
+            this.loadNode(window.PuzzlesData[this.currentPzlId].nodeFail); 
+        };
+        document.getElementById('btnExitPuzle').onclick = () => { 
+            window.AduioSys.playBlip(400); 
+            this.loadNode(window.PuzzlesData[this.currentPzlId].nodeFail); 
+        };
+        document.getElementById('btnSubmitPuzle').onclick = () => this.checkPuzle();
+        document.getElementById('btnHint').onclick = () => {
+            window.AduioSys.playBlip();
+            if(window.gameCoins > 0) {
+                window.gameCoins--;
+                document.getElementById('coinCount').innerText = window.gameCoins;
+                document.getElementById('hintText').innerText = window.PuzzlesData[this.currentPzlId].hint;
+                document.getElementById('hintOverlay').style.display = "flex";
+            }
+        };
+        document.getElementById('btnSeguir').onclick = () => {
+            document.getElementById('eurekaUI').classList.remove('show');
+            this.loadNode(window.PuzzlesData[this.currentPzlId].nodeWin);
         };
         
-        document.getElementById('btnContinueDialog').onclick = () => this.nextDialogAction();
-        document.getElementById('btnPresStart').onclick = () => this.startPuzzleMinigame();
-        document.getElementById('btnPresSkip').onclick = () => this.skipTempPuzzle();
-        
-        document.getElementById('btnSubmitPuzzle').onclick = () => this.evaluatePuzzle();
-        document.getElementById('btnExitPuzzle').onclick = () => this.exitPuzzleToNode();
-        
-        document.getElementById('hud-hints').onclick = () => this.requestHint();
-        document.getElementById('hud').style.display = "flex";
-        this.updateHUD();
+        window.gameCoins = 5;
+        this.currentPzlId = null;
+        this.activeMod = null;
+        this.isAnimating = false; // Lock system
+
+        // Initialize story
+        this.loadNode("start");
     }
 
-    updateHUD() {
-        document.getElementById('coin-count').innerText = this.state.points; // Mostrar picarats arriba
-    }
-
-    // --- MANEJO DE NOVELA VISUAL ---
-    loadDialog(nodeId) {
-        if(!nodeId) { alert("Fin de la Demo!!"); return; }
-        const n = this.data.dialogs[nodeId];
+    loadNode(nodeId) {
+        document.getElementById('dialogUI').classList.remove('hidden');
+        document.getElementById('puzzleUI').classList.add('hidden');
         
-        if(n.pzl) {
-            this.setupPuzzleScreen(n.pzl);
+        const node = window.DialogData[nodeId];
+        if(!node) return;
+        
+        if(node.pzl) {
+            this.setupPuzle(node.pzl);
             return;
         }
 
-        document.getElementById('s-dialog').classList.add('active');
-        document.getElementById('s-puzzle').classList.remove('active');
+        window.AduioSys.startExplorationMusic();
+
+        // Control visual dialogos AI (máquina)
+        const dBox = document.getElementById('dialogBox');
+        if(node.machine) dBox.classList.add('machine');
+        else dBox.classList.remove('machine');
+
+        document.getElementById('charAvatar').innerText = node.char;
+        document.getElementById('charName').innerText = node.name;
+        document.getElementById('dialogText').innerText = node.text;
         
-        // Limpiamos UI
-        document.getElementById('dlgCharAvatar').innerText = n.char;
-        document.getElementById('dlgCharName').innerText = n.name;
-        document.getElementById('dlgText').innerHTML = n.text;
-        
-        const optsDiv = document.getElementById('dlgOptions');
+        const optsDiv = document.getElementById('dialogOptions');
         optsDiv.innerHTML = '';
         
-        if(n.options && n.options.length > 0) {
-            n.options.forEach(opt => {
-                const btn = document.createElement('button');
-                btn.className = "submit-btn";
-                btn.innerText = opt.label;
-                btn.onclick = () => { window.AudioManager.playBlip(); this.loadDialog(opt.route); };
-                optsDiv.appendChild(btn);
-            });
-        }
+        node.choices.forEach(ch => {
+            const b = document.createElement('button');
+            b.className = "dialog-btn";
+            b.innerText = ch.text;
+            b.onclick = () => { window.AduioSys.playBlip(600); this.loadNode(ch.target); };
+            optsDiv.appendChild(b);
+        });
     }
 
-    // --- MANEJO DE ENIGMAS ---
-    setupPuzzleScreen(puzzleId) {
-        document.getElementById('s-dialog').classList.remove('active');
-        document.getElementById('s-puzzle').classList.add('active');
+    setupPuzle(pId) {
+        const pz = window.PuzzlesData[pId];
+        this.currentPzlId = pId;
+        pz.currentPts = pz.currentPts || pz.valPicarats; // mantain points on fail
+
+        document.getElementById('dialogUI').classList.add('hidden');
+        document.getElementById('puzzleUI').classList.remove('hidden');
         
-        const pData = this.data.puzzles[puzzleId];
-        this.state.activePuzzleId = puzzleId;
-        pData.currentMax = pData.currentMax || pData.maxPuntos;
+        // Reset overlay
+        const pres = document.getElementById('pzlPresOverlay');
+        pres.classList.remove('hidden');
         
-        // Reset Hints
-        document.getElementById('hintArea').style.display = "none";
-        
-        // Show Presentation
-        document.getElementById('pzlActive').style.display = "none";
-        document.getElementById('presTitle').innerText = pData.title;
-        const pPts = document.getElementById('presPtsCount');
-        pPts.innerText = pData.currentMax;
+        document.getElementById('presTitle').innerText = pz.title;
+        document.getElementById('presPicarats').innerText = pz.currentPts + " Picarats";
         document.getElementById('presPicarats').classList.remove('punish');
-        document.getElementById('btnPresStart').innerText = "Empezar Puzle";
-        document.getElementById('pzlPresentation').style.display = "flex";
+        document.getElementById('btnStartPuzle').innerText = "Empezar Puzle";
     }
 
-    startPuzzleMinigame() {
-        window.AudioManager.startPuzzleMusic();
-        document.getElementById('pzlPresentation').style.display = "none";
-        document.getElementById('pzlActive').style.display = "block";
+    launchPuzle() {
+        window.AduioSys.startPuzzleMusic();
         
-        const pData = this.data.puzzles[this.state.activePuzzleId];
-        document.getElementById('pzlHeaderTitle').innerText = pData.title.split(":")[0];
-        document.getElementById('pzlHeaderPicarats').innerText = pData.currentMax;
-        document.getElementById('pzlDesc').innerHTML = pData.description;
+        document.getElementById('pzlPresOverlay').classList.add('hidden');
+        const pz = window.PuzzlesData[this.currentPzlId];
+        document.getElementById('pMainTitle').innerText = pz.title;
+        document.getElementById('pMainPts').innerText = pz.currentPts;
+        document.getElementById('pDesc').innerHTML = pz.desc;
         
-        // Instanciar juego dinámico
-        this.pzlInstance = new window.InteractivePuzzle(pData, document.getElementById('pzlInteractive'));
+        this.activeMod = new window.PuzzleModule(pz, "pInteract");
     }
 
-    evaluatePuzzle() {
-        const isCorrect = this.pzlInstance.validate();
-        
-        const evalScreen = document.getElementById('eval-overlay');
-        evalScreen.style.display = "flex";
-        window.AudioManager.playBlip();
+    checkPuzle() {
+        if(this.isAnimating) return;
+        this.isAnimating = true;
 
-        setTimeout(() => {
-            evalScreen.style.display = "none";
-            
-            if(isCorrect) {
-                 window.AudioManager.playCorrect();
-                 document.getElementById('winPicaratsCount').innerText = "+ " + this.data.puzzles[this.state.activePuzzleId].currentMax + " PICARATS";
-                 document.getElementById('eureka-overlay').classList.add('show');
+        const ov = document.getElementById('evalOverlay');
+        const evT = document.getElementById('evalText');
+        ov.classList.add('show');
+        
+        let count = 3;
+        evT.innerText = count + "...";
+        window.AduioSys.playBlip(800);
+
+        const iv = setInterval(() => {
+            count--;
+            if(count > 0) {
+                evT.innerText = count + "...";
+                window.AduioSys.playBlip(800 + (3-count)*100);
             } else {
-                 window.AudioManager.playWrong();
-                 document.getElementById('wrong-overlay').classList.add('show');
+                clearInterval(iv);
+                evT.innerText = "VEAMOS...";
+                setTimeout(() => this.resolvePuzle(ov), 1000);
             }
-        }, 1500);
-    }
-
-    handleFail() {
-        const pData = this.data.puzzles[this.state.activePuzzleId];
-        const oldMax = pData.currentMax;
-        const penalty = Math.max(1, Math.floor(pData.maxPuntos / 4));
-        pData.currentMax = Math.max(0, pData.currentMax - penalty);
-        
-        document.getElementById('pzlActive').style.display = "none";
-        document.getElementById('presPtsCount').innerText = oldMax;
-        document.getElementById('btnPresStart').innerText = "Reintentar";
-        document.getElementById('pzlPresentation').style.display = "flex";
-        
-        setTimeout(() => {
-            window.AudioManager.playBlip();
-            document.getElementById('presPicarats').classList.add('punish');
-            document.getElementById('presPtsCount').innerText = pData.currentMax;
         }, 800);
     }
 
-    finishPuzzleNode(isSuccess) {
-        const pData = this.data.puzzles[this.state.activePuzzleId];
-        if(isSuccess) {
-             this.state.points += pData.currentMax;
-             this.updateHUD();
+    resolvePuzle(overlayDiv) {
+        overlayDiv.classList.remove('show');
+        const res = this.activeMod.validate();
+        const pz = window.PuzzlesData[this.currentPzlId];
+
+        if(res) {
+            window.AduioSys.playCorrect();
+            document.getElementById('winPoints').innerText = pz.currentPts;
+            document.getElementById('winExplain').innerHTML = pz.winMsg;
+            document.getElementById('eurekaUI').classList.add('show');
+            this.isAnimating = false;
+        } else {
+            window.AduioSys.playWrong();
+            // Castigar Picarats
+            const prev = pz.currentPts;
+            pz.currentPts = Math.max(0, pz.currentPts - Math.floor(pz.valPicarats / 4));
+            
+            document.getElementById('presPicarats').innerText = prev + " Picarats";
+            document.getElementById('btnStartPuzle').innerText = "Reintentar";
+            document.getElementById('pzlPresOverlay').classList.remove('hidden');
+
+            setTimeout(() => {
+                window.AduioSys.playBlip(400);
+                document.getElementById('presPicarats').classList.add('punish');
+                document.getElementById('presPicarats').innerText = pz.currentPts + " Picarats";
+                this.isAnimating = false;
+            }, 800);
         }
-        window.AudioManager.stopAll();
-        this.loadDialog(isSuccess ? pData.winNode : pData.failNode);
-    }
-
-    exitPuzzleToNode() {
-        window.AudioManager.playBlip();
-        window.AudioManager.stopAll();
-        this.loadDialog(this.data.puzzles[this.state.activePuzzleId].failNode); // Ir al nodo fallback al salirse
-    }
-    
-    skipTempPuzzle() {
-        window.AudioManager.playBlip();
-        this.loadDialog(this.data.puzzles[this.state.activePuzzleId].failNode);
-    }
-
-    requestHint() {
-        if(!this.state.activePuzzleId) return;
-        window.AudioManager.playBlip();
-        document.getElementById('hintBoxText').innerText = this.data.puzzles[this.state.activePuzzleId].hint;
-        document.getElementById('hint-overlay').classList.add('show');
     }
 }
 
+// Inicializar engine nativo click a click (para evitar politicas de audio autoplay, reparamos inicializando con la pagina)
 window.onload = () => {
-    window.GameEngine = new GameEngineClass();
-    window.GameEngine.init();
+    document.body.addEventListener('click', () => {
+        if(!window.App) window.App = new GameApp();
+    }, {once:true});
 };

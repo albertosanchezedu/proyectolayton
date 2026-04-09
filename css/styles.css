@@ -1,175 +1,153 @@
-/* ============================================================
-   ESTILOS PRINCIPALES LAYTON (Extraídos de Referencias Reales)
-============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Oswald:wght@400;700&family=Crimson+Text:ital,wght@0,400;0,700;1,400&display=swap');
 
 :root {
-  --bg: #1a0e3a;
-  --surface: #ffffff;
-  --ink: #111;
-  --amber: #F0A030;
-  --lime: #CCFF00;
-  --coral: #F06B6B;
-  --gold: #c8960c;
-  --gold2: #e8b832;
-  --gold3: #f5d060;
-  --parchment: #f5ecd0;
-  --parchment2: #ede0b8;
-  --wood: #8B5E3C;
-  --wood2: #6B3F1C;
-  --dark: #1a1008;
-  --green: #2d7a2d;
-  --hint: #3a6ea8;
+    /* PALETA LAYTON ORIGINAL RESTAURADA */
+    --bg-color: #FFF4D2;
+    --bg-color-dark: #E6CCA2;
+    --text-color: #2D1B1B;
+    --accent-color: #D14D4D;
+    --wood: #8B5E3C;
+    --wood2: #6B3F1C;
+    --layton-blue: #94C1D4;
+    --layton-tan: #E6CCA2;
+    --gold: #c8960c;
+    --dark: #2D1B1B;
+
+    --font-heading: 'Playfair Display', serif;
+    --font-body: 'Crimson Text', serif;
+    --font-ui: 'Oswald', sans-serif;
 }
 
-*{margin:0;padding:0;box-sizing:border-box;}
-html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);}
-body { font-family: 'Oswald', sans-serif;}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body, html { width: 100%; height: 100%; font-family: var(--font-body); overflow: hidden; background: var(--bg-color); color: var(--text-color); }
 
-/* FONDOS DINÁMICOS CSS EN LUGAR DE IMÁGENES */
-body::before {
-    content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+/* FONDO DINÁMICO CSS PURO (Partículas estáticas animadas, no afectan al ratón) */
+#gameArea {
+    position: relative; width: 100vw; height: 100vh;
+    background: radial-gradient(circle at center, var(--bg-color) 0%, var(--bg-color-dark) 100%);
+    overflow: hidden;
+}
+
+/* Polvo clásico y sutil de novela visual, sin movimiento de ratón */
+.dust-particles {
+    position: absolute; inset: -50%; pointer-events: none; z-index: 1;
     background-image: 
-        radial-gradient(circle at 15% 85%, rgba(204,255,0,0.05) 0%, transparent 45%),
-        radial-gradient(circle at 85% 15%, rgba(240,107,107,0.05) 0%, transparent 45%),
-        radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px);
-    background-size: 100vw 100vh, 100vw 100vh, 28px 28px;
-    opacity: 0.8;
+        radial-gradient(circle at center, rgba(139, 94, 60, 0.15) 1px, transparent 1px),
+        radial-gradient(circle at center, rgba(209, 77, 77, 0.08) 2px, transparent 2px);
+    background-size: 80px 80px, 120px 120px;
+    background-position: 0 0, 40px 40px;
+    animation: driftDust 80s linear infinite;
+}
+@keyframes driftDust {
+    0% { transform: translateY(0) rotate(0deg); }
+    100% { transform: translateY(10%) rotate(5deg); }
 }
 
-/* ═══ ANIMATIONS ═══ */
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-@keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}
-@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
-@keyframes popIn{from{transform:scale(0.5);opacity:0}to{transform:scale(1);opacity:1}}
-@keyframes pulse { from { opacity:0.6; transform:scale(0.95); } to { opacity:1; transform:scale(1.05); } }
-@keyframes coinSpin{0%{transform:rotateY(0deg)}100%{transform:rotateY(360deg)}}
-
-.screen { position:fixed; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; z-index:10; overflow-y:auto; padding:16px; transition: opacity 0.5s; background: linear-gradient(160deg, #1a0e3a 0%, #0d1f3c 40%, #0a2a1a 100%); }
-.screen.active { display:flex; }
-
-/* ═══ HUD ═══ */
-#hud {
-  position:fixed;top:0;left:0;right:0;height:50px;
-  background:#111;border-bottom:3px solid var(--lime);
-  display:flex;align-items:center;justify-content:space-between;
-  padding:0 16px;z-index:9000;
-  box-shadow:0 2px 12px rgba(0,0,0,0.4);
+/* SISTEMA NOVELA - DIÁLOGOS ESTILO LAYTON */
+#dialogUI {
+    position: absolute; inset: 0; z-index: 10;
+    display: flex; justify-content: center; align-items: center;
+    background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.3) 100%);
+    opacity: 1; transition: opacity 0.5s;
 }
-#hud-title{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;color:#666;}
-#hud-puzzle{font-family:'Playfair Display',serif;font-size:13px;color:var(--gold2);font-style:italic;}
-.hud-right{display:flex;align-items:center;gap:12px;}
-.hint-btn{
-  font-family:'Share Tech Mono',monospace;font-size:12px;
-  color:var(--hint);letter-spacing:1px;
-  background:rgba(58,110,168,0.15);border:1px solid rgba(58,110,168,0.4);
-  padding:3px 10px;border-radius:2px;cursor:pointer;transition:all 0.2s;
-}
-.coin-display {
-    display:flex;align-items:center;gap:4px;
-    font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--gold2);
-    background:rgba(200,150,12,0.15);border:1px solid rgba(200,150,12,0.4);
-    padding:3px 10px;border-radius:2px;
-}
-.coin-icon{animation:coinSpin 3s linear infinite;display:inline-block;}
+#dialogUI.hidden { opacity: 0; pointer-events: none; }
 
-/* ═══ DIALOG BOX (Clásico Layton) ═══ */
 .dialog-box {
-    background: linear-gradient(145deg, #f5ecd0, #ede0b8);
-    border: 4px solid var(--gold); border-radius: 4px; padding: 20px 24px;
-    position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    animation: fadeUp 0.6s ease;
+    background: #fff; border: 6px solid var(--wood); border-radius: 8px;
+    width: 90%; max-width: 800px; padding: 30px;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+    position: relative; display: flex; flex-direction: column; align-items: center;
+    transform: translateY(15px); animation: float_dialog 4s ease-in-out infinite;
 }
-.dialog-avatar {
-    position:absolute; top:-35px; left:20px; font-size:48px;
-    filter:drop-shadow(0 4px 6px rgba(0,0,0,0.4)); animation:floatY 3s infinite ease-in-out;
+@keyframes float_dialog { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+.char-portrait {
+    font-size: 5rem; line-height: 1; background: #fff; border: 4px solid var(--wood);
+    border-radius: 50%; padding: 15px; margin-top: -80px; margin-bottom: 20px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2); background: var(--bg-color);
 }
-.dialog-text {
-    font-family:'Crimson Text',serif; font-size:18px; color:var(--dark);
-    line-height:1.7; min-height:60px; margin-top:20px; 
+.dialog-text { font-size: 1.8rem; color: var(--dark); text-align: center; min-height: 100px; }
+
+/* VARIACIÓN PARA MÁQUINAS/IA */
+.dialog-box.machine {
+    background: #111; border-color: #2288bb; color: #fff; border-radius: 0;
+    animation: pulseMachine 0.5s infinite;
 }
+@keyframes pulseMachine { 0%,100%{ box-shadow: 0 0 10px #2288bb; } 50%{ box-shadow: 0 0 20px #2288bb; } }
+.dialog-box.machine .char-portrait { border-color: #2288bb; background: #000; color: #2288bb; border-radius: 0; }
+.dialog-box.machine .dialog-text { color: #87CEEB; font-family: 'Share Tech Mono', monospace; }
 
-/* ═══ BOTONES GLOBALES ═══ */
-.submit-btn, .btn-primary {
-  width:100%;padding:14px;
-  background: linear-gradient(135deg, var(--wood), var(--wood2));
-  border:none;border-radius:3px;
-  font-family:'Playfair Display',serif;font-size:16px;font-weight:700;font-style:italic;
-  color:var(--gold3);cursor:pointer;transition:all 0.3s;
-  box-shadow:0 4px 12px rgba(0,0,0,0.3);letter-spacing:1px;
+/* Botones Novel/HUD */
+.dialog-btn {
+    background: var(--accent-color); padding: 12px 30px; color: #fff; font-family: var(--font-ui); font-size: 1.5rem;
+    border: 3px solid var(--dark); border-radius: 50px; cursor: pointer; margin-top: 15px;
+    box-shadow: 0 5px 0px var(--dark); transition: 0.1s; display: block; margin: 10px auto;
 }
-.submit-btn:hover, .btn-primary:hover {transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,0.4);}
+.dialog-btn:active { transform: translateY(5px); box-shadow: 0 0px 0px var(--dark); }
 
-
-/* ═══ PUZZLE FRAME (estilo Pergamino) ═══ */
-.puzzle-frame {
-  max-width:800px;width:100%;
-  background: linear-gradient(145deg, #f5ecd0, #ede0b8);
-  border: 4px solid var(--gold); border-radius:4px;
-  box-shadow:0 0 0 1px rgba(200,150,12,0.3), 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.6);
-  position:relative; margin-bottom:16px; animation:fadeUp 0.5s ease;
+/* HUD SUPERIOR */
+#hudLayer {
+    position:absolute; top:0; left:0; width:100%; height: 60px; z-index: 50;
+    display:flex; justify-content:space-between; align-items:center; padding:0 20px;
+    background: rgba(45, 27, 27, 0.9); border-bottom: 3px solid var(--gold);
+    font-family: var(--font-ui); color: #fff; display:none;
 }
-.puzzle-frame-corner { position:absolute;width:20px;height:20px;border-color:var(--gold2);border-style:solid; }
-.pfc-tl{top:-1px;left:-1px;border-width:3px 0 0 3px;border-radius:2px 0 0 0;}
-.pfc-tr{top:-1px;right:-1px;border-width:3px 3px 0 0;border-radius:0 2px 0 0;}
-.pfc-bl{bottom:-1px;left:-1px;border-width:0 0 3px 3px;border-radius:0 0 0 2px;}
-.pfc-br{bottom:-1px;right:-1px;border-width:0 3px 3px 0;border-radius:0 0 2px 0;}
+.hud-coins { font-size: 1.5rem; color: var(--gold); display:flex; align-items:center; gap:8px;}
+.hint-btn { background: #3a6ea8; color: #fff; padding: 5px 15px; border-radius: 20px; cursor:pointer; border:2px solid #fff; font-size:1.2rem;}
 
-.puzzle-header {
-  background: linear-gradient(90deg, var(--gold2), var(--gold3), var(--gold2));
-  padding: 10px 24px; display:flex; align-items:center; justify-content:space-between;
+/* Puzles UI Clásico Restaurado */
+#puzzleUI {
+    position: absolute; inset: 0; z-index: 20; background: var(--bg-color-dark);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    opacity: 1; transition: opacity 0.5s;
 }
-.puzzle-picarats { font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:1px;color:var(--dark); font-weight:bold;}
-.puzzle-body{padding:25px; overflow-y:auto; max-height:80vh;}
-.puzzle-desc { font-family:'Crimson Text',serif;font-size:16px;color:#222;line-height:1.7;margin-bottom:16px;background:rgba(139,94,60,0.06);border-left:3px solid var(--gold);padding:10px 14px;border-radius:0 4px 4px 0; }
+#puzzleUI.hidden { opacity: 0; pointer-events: none; }
 
-/* ═══ PANTALLA INTRO PUZLE GIGANTE ═══ */
-.pzl-pres-layer { display:flex; flex-direction:column; align-items:center; justify-content:center; }
-.pres-title {font-family:'Playfair Display',serif; font-size:4rem; color: #fff; text-shadow:0 0 20px var(--gold); margin-bottom:20px;}
-.pres-picarats {background:var(--coral); font-family:'Oswald'; font-size:3rem; padding: 10px 40px; border-radius:40px; color:#fff; box-shadow:0 6px 0 #a13d3d; font-weight:bold; margin-bottom:40px; transition:0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);}
-.pres-picarats.punish {background:#a13d3d; transform:scale(0.85); box-shadow:0 0 0 #5c1c1c;}
+/* Presentación y Pérdida Picarats */
+.pzl-pres-layer { position: absolute; inset: 0; z-index: 30; background: var(--bg-color); display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.5s; }
+.pzl-pres-layer.hidden { opacity: 0; pointer-events: none; }
 
+.pres-title { font-family: var(--font-heading); font-size: 5rem; color: var(--dark); margin-bottom:20px; }
+.pres-picarats { background: var(--accent-color); color: white; padding: 15px 50px; border-radius: 50px; font-family: var(--font-ui); font-size: 4rem; font-weight: bold; box-shadow: 0 10px 0 #8A3333; margin-bottom: 50px; transition: 1s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.pres-picarats.punish { transform: scale(0.9); background: #8A3333; box-shadow: 0 4px 0 #4a1c1c; color: #ffcccc;}
 
-/* ═══ COMPONENTES PUZLE DINÁMICOS ═══ */
+/* Layout Puzle Fijo */
+.pzl-container { width: 95%; height: 90%; max-width: 1200px; background: #fff; border: 8px solid var(--wood); border-radius: 8px; display: flex; flex-direction: column; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+.pzl-header { background: #fff; border-bottom: 3px solid var(--wood); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center;}
+.pzl-header h2 { font-family: var(--font-heading); font-size: 2.2rem; margin:0; }
+.pzl-badge { background: var(--accent-color); color: #fff; padding: 5px 20px; border-radius: 20px; font-size: 1.5rem; }
 
-/* CLASIFICADOR */
-.drop-zone { min-height:80px; border:2px dashed var(--gold); border-radius:4px; padding:10px; background:rgba(200,150,12,0.05); display:flex; gap:10px; flex-wrap:wrap; transition:0.2s; align-content:start;}
-.drop-zone.drag-over { background:rgba(200,150,12,0.2); border-style:solid; }
-.drag-item { background:var(--surface); border:2px solid var(--wood); border-radius:4px; padding:8px 12px; font-family:'Crimson Text',serif; font-size:14px; cursor:grab; box-shadow:0 2px 5px rgba(0,0,0,0.2); font-weight:bold; color:var(--dark); transition:transform 0.2s;}
-.drag-item:active { cursor:grabbing; transform:scale(0.95); opacity:0.8; }
+.pzl-body { display: flex; flex: 1; height: 100%; overflow: hidden;}
+.pzl-desc { width: 35%; background: var(--bg-color); border-right: 4px solid var(--wood); padding: 25px; font-size: 1.5rem; overflow-y: auto;}
+.pzl-interactive { flex: 1; position: relative; background-image: repeating-linear-gradient(45deg, #fff 25%, transparent 25%, transparent 75%, #fff 75%, #fff), repeating-linear-gradient(45deg, #fff 25%, var(--layton-blue) 25%, var(--layton-blue) 75%, #fff 75%, #fff); background-size: 40px 40px; background-position: 0 0, 20px 20px; overflow: hidden; padding: 20px; display: flex; justify-content: center; align-items: center;}
 
-/* RUTAS */
-.route-grid { display:grid; gap:8px; width:100%; border:2px solid var(--parchment2); padding:20px; background:rgba(255,255,255,0.4);border-radius:8px;}
-.route-node { border:3px solid var(--wood); border-radius:50%; width:60px; height:60px; display:flex; justify-content:center; align-items:center; font-family:'Share Tech Mono'; font-size:24px; font-weight:bold; background:#fff; cursor:pointer; color:var(--dark); margin:0 auto; box-shadow:0 4px 0 var(--wood2); transition:0.1s;}
-.route-node.active { background:var(--gold2); border-color:var(--dark); transform:translateY(4px); box-shadow:0 0 0 var(--dark);}
+.pzl-footer { padding: 15px; border-top: 4px solid var(--wood); display: flex; justify-content: space-between; background: #fff;}
 
-/* ═══ OVERLAYS RESULTADO ═══ */
-#eureka-overlay, #wrong-overlay, #hint-overlay { position:fixed; inset:0; z-index:9999; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.8); backdrop-filter:blur(4px); }
-#eureka-overlay.show, #wrong-overlay.show, #hint-overlay.show { display:flex; }
-.eureka-box { background:linear-gradient(145deg,#1e1408,#2a1c0a); border:3px solid var(--gold); border-radius:4px; padding:40px 50px; text-align:center; animation:popIn 0.6s ease; box-shadow:0 0 60px rgba(200,150,12,0.6); max-width:420px; width:90%; position:relative;}
-.eureka-word { font-family:'Playfair Display',serif; font-size:3rem; font-weight:900; font-style:italic; background:linear-gradient(135deg,var(--gold2),var(--gold3),var(--gold2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-size:200% auto; animation:shimmer 2s linear infinite; margin-bottom:8px; }
-.eureka-picarats { font-family:'Share Tech Mono'; font-size:20px; color:var(--lime); margin-bottom:20px;}
-.eureka-msg { font-family:'Crimson Text',serif; font-size:18px; color:rgba(255,240,200,0.9); font-style:italic; line-height:1.6; margin-bottom:20px; }
-.eureka-btn { padding:12px 32px; background:linear-gradient(135deg,var(--gold),var(--gold2)); border:none;border-radius:3px; font-family:'Playfair Display',serif;font-size:16px;font-weight:700;font-style:italic; color:var(--dark);cursor:pointer;transition:all 0.3s; }
+/* EVALUACIONES Y OVERLAYS (El deseado 3, 2, 1!) */
+#evalOverlay { position: absolute; inset: 0; z-index: 50; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; opacity:0; pointer-events:none; transition: 0.3s;}
+#evalOverlay.show { opacity: 1; pointer-events:all; }
+.eval-text { font-family: var(--font-heading); font-size: 6rem; letter-spacing: 5px; color: var(--gold); animation: pulseCheck 0.4s infinite alternate; text-transform: uppercase; font-style: italic;}
+@keyframes pulseCheck { from { transform: scale(0.95); text-shadow: 0 0 10px var(--gold); } to { transform: scale(1.05); text-shadow: 0 0 30px var(--gold); } }
 
-.wrong-box { background:#2a0a0a; border:3px solid #c0392b; border-radius:4px; padding:30px 40px; text-align:center; animation:shake 0.4s ease; max-width:400px; width:90%; box-shadow: 0 0 60px rgba(192,57,43,0.5);}
-.wrong-word { font-family:'Playfair Display',serif; font-size:3rem; font-weight:900; color:#f06b6b; margin-bottom:10px; }
-.wrong-msg { font-family:'Crimson Text',serif;font-size:16px; color:rgba(255,200,200,0.9); font-style:italic; margin-bottom:20px;}
-.wrong-btn { padding:10px 28px; background:#c0392b; border:none; border-radius:3px; font-family:'Oswald',sans-serif; font-size:16px; color:#fff; cursor:pointer;}
+/* EUREKA CORRECTO */
+#eurekaUI { position: fixed; inset: 0; z-index: 60; background: rgba(255,244,210,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity:0; pointer-events:none; transition:0.3s; }
+#eurekaUI.show { opacity:1; pointer-events:all; }
+.eureka-card { background: #fff; border: 8px solid var(--wood); border-radius: 8px; padding: 40px; text-align: center; animation: popIn 0.5s ease; max-width: 600px;}
+@keyframes popIn { 0%{transform:scale(0.5); opacity:0;} 100%{transform:scale(1); opacity:1;} }
 
-/* INTRO BOX */
-.intro-box { position:relative;z-index:2;max-width:620px;width:100%; background: linear-gradient(145deg, #1e1408, #2a1c0a); border: 3px solid var(--gold); border-radius: 4px; box-shadow: 0 0 40px rgba(200,150,12,0.4), inset 0 0 60px rgba(0,0,0,0.5); overflow: hidden; animation: fadeIn 1s ease; margin-top:20px;}
-.intro-top { background: linear-gradient(90deg, var(--gold2), var(--gold3), var(--gold2)); padding: 8px 20px; text-align: center; font-family: 'Share Tech Mono', monospace; font-size: 10px; letter-spacing: 4px; color: var(--dark); font-weight: 700; }
-.intro-inner {padding:30px 36px 36px;}
-.intro-subtitle { font-family: 'Share Tech Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--gold2); text-align:center; margin-bottom: 6px; text-transform: uppercase; }
-.intro-title { font-family: 'Playfair Display', serif; font-size: 38px; color: var(--gold3); text-align: center; font-weight: 900; font-style: italic; line-height: 1.15; margin-bottom: 4px; text-shadow: 0 2px 8px rgba(0,0,0,0.6); }
-.intro-and { font-family: 'Crimson Text', serif; font-size: 14px; color: rgba(255,220,100,0.6); text-align:center; font-style:italic; }
-.intro-subtitle2 { font-family: 'Playfair Display', serif; font-size: 20px; color: rgba(255,220,100,0.85); text-align:center; font-style: italic; margin-bottom: 24px; }
-.intro-stars { position:absolute;inset:0;pointer-events:none; background-image: radial-gradient(1px 1px at 10% 15%, #fff 0%, transparent 100%), radial-gradient(1px 1px at 80% 60%, rgba(255,255,255,0.7) 0%, transparent 100%), radial-gradient(2px 2px at 15% 85%, rgba(255,220,100,0.6) 0%, transparent 100%); opacity:0.8;}
+/* UI MODULOS ESPECIFICOS */
+/* Modulo: Ruta Nodos */
+.node-travel { position: absolute; width: 60px; height: 60px; background: #fff; border: 4px solid var(--dark); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 2rem; font-family: var(--font-ui); cursor: pointer; box-shadow: 0 8px 0 var(--dark); z-index: 2; transition: all 0.2s; }
+.node-travel.selected { background: var(--gold); transform: scale(1.1) translateY(4px); box-shadow: 0 4px 0 var(--dark); border-color: var(--accent-color);}
 
-/* HINTS */
-.hint-box { background:linear-gradient(145deg,#0d1f3c,#1a2a4c); border:2px solid var(--hint);border-radius:4px; padding:30px 36px;max-width:420px;width:90%; animation:fadeUp 0.4s ease; box-shadow:0 0 40px rgba(58,110,168,0.4); text-align:center;}
-.hint-box-title { font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:3px; color:rgba(100,160,220,0.6);margin-bottom:20px; }
-.hint-box-text { font-family:'Crimson Text',serif;font-size:18px;color:rgba(200,220,255,0.9); line-height:1.7;font-style:italic;margin-bottom:30px; }
-.hint-close { padding:10px 24px;background:var(--hint);border:none;border-radius:3px; font-family:'Oswald',sans-serif;font-size:14px;color:#fff;cursor:pointer; }
+/* Modulo: Parcheo / Conexion */
+.panel-parcheo { width:100%; display:flex; justify-content:space-between; height:100%; align-items:stretch;}
+.parcheo-col { width: 40%; display:flex; flex-direction:column; justify-content:space-evenly;}
+.parcheo-item { background: #fff; border: 3px solid var(--dark); padding: 15px; border-radius: 6px; font-size: 1.4rem;text-align:center;cursor:pointer; box-shadow:0 5px 0 var(--dark); transition:0.1s;}
+.parcheo-item.active { background: var(--layton-tan); transform:translateY(5px); box-shadow:0 0 0 var(--dark);}
+.parcheo-item.paired { background: #7FB37F; color: #fff; pointer-events:none; transform:translateY(5px); box-shadow:0 0 0 var(--dark);}
+
+/* Modulo: Clasificador (Drag) */
+.classif-zone { border: 4px dashed var(--gold); background: rgba(255,255,255,0.7); min-height: 120px; flex:1; margin:10px; padding:15px; border-radius:8px; display:flex; flex-wrap:wrap; gap:10px;}
+.classif-drag { background: #fff; border:2px solid var(--dark); padding:10px; font-size:1.3rem; cursor:grab; box-shadow: 0 4px 0 var(--dark); user-select:none;}
+.classif-drag:active { cursor:grabbing; }
