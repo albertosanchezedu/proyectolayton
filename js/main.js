@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('gameHUD').classList.remove('hidden');
             document.getElementById('sceneScreen').classList.remove('hidden');
 
-            window.AudioManager.startMusic();
+            window.AudioManager.startOverworldMusic();
             await loadChapter('data/chapters/tema1.json');
         }, 500); 
     });
