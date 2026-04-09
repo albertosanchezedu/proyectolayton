@@ -6,6 +6,15 @@ document.addEventListener('DOMContentLoaded', () => {
     setupAccessibilityMenu();
     window.SaveSystem.load();
 
+    const startScrn = document.getElementById('startScreen');
+    const bgParallax = document.getElementById('parallaxBg');
+    startScrn.addEventListener('mousemove', (e) => {
+        if(!bgParallax || startScrn.classList.contains('hidden')) return;
+        const moveX = (e.clientX / window.innerWidth - 0.5) * -30;
+        const moveY = (e.clientY / window.innerHeight - 0.5) * -30;
+        bgParallax.style.transform = `translate(${moveX}px, ${moveY}px)`;
+    });
+
     document.getElementById('btnStart').addEventListener('click', async () => {
         window.AudioManager.init();
         

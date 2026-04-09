@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/dialog.css">
     <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/startscreen.css">
 </head>
 <body>
     <button id="btnAccessibility" class="accessibility-toggle" aria-label="Ajustes">⚙️ Ajustes</button>
@@ -81,7 +82,9 @@
 
     <div id="gameContainer" class="game-container">
         <!-- PANTALLA INICIO CLÁSICA -->
-        <div id="startScreen" class="screen active">
+        <div id="startScreen" class="screen active" style="overflow: hidden; background: transparent;">
+            <div id="parallaxBg" class="parallax-bg"></div>
+            <div class="dust-particles"></div>
             <div class="intro-box">
                 <div class="intro-top">· FP COMERCIO · TÉCNICAS DE ALMACÉN ·</div>
                 <div class="intro-inner">

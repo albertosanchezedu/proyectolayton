@@ -100,7 +100,7 @@ function startOverworldMusic() {
     setMusicVolume(0.2);
     runSequence(q, 3, 4, (barIdx, t0) => { // Compás 3/4
         const cb = barIdx % 4;
-        const root = [N.Ebm2, N.Gb2, N.Ab2, N.Bb2][cb] || N.Eb2;
+        const root = [N.Eb2, N.Gb2, N.Ab2, N.Bb2][cb] || N.Eb2;
         playAccordian(root, t0, q*0.8, 0.03); 
         playAccordian(root*1.5, t0+q, q*0.8, 0.02);
         playAccordian(root*1.2, t0+q*2, q*0.8, 0.02);
