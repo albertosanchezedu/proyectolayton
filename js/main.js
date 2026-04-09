@@ -29,16 +29,13 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('sceneScreen').classList.remove('hidden');
 
             window.AudioManager.startOverworldMusic();
-            await loadChapter('data/chapters/tema1.json');
+            await loadChapter(window.GameScenario_Tema1);
         }, 500); 
     });
 });
 
-async function loadChapter(jsonPath) {
+async function loadChapter(chapterData) {
     try {
-        const response = await fetch(jsonPath);
-        const chapterData = await response.json();
-        
         window.GameData = chapterData;
         window.SaveSystem.data.totalPuzzles = chapterData.metadata.totalPuzzles;
         window.SaveSystem.updateHUD();
