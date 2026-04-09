@@ -1,0 +1,141 @@
+/* Interfaz de Diálogo Estilo Clásico/Centralizado */
+#dialogOverlay {
+    position: fixed; inset: 0;
+    z-index: 900;
+    display: flex; flex-direction: column;
+    justify-content: flex-end; align-items: center;
+    padding-bottom: 2vh;
+    background: transparent;
+    pointer-events: none; 
+}
+
+/* Oscurecimiento de fondo (Atmosférico) */
+.dialog-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 899;
+    transition: opacity 0.3s;
+}
+
+#dialogUI {
+    width: 90%;
+    max-width: 800px;
+    display: flex;
+    align-items: flex-end;
+    pointer-events: auto; 
+    margin-bottom: 10px;
+}
+
+#portraitArea {
+    width: 140px;
+    text-align: center;
+    margin-right: -10px; /* Se solapa elegantemente con la caja */
+    z-index: 901; 
+    position: relative;
+    top: 5px; 
+}
+#dialogPortrait {
+    font-size: 110px;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6));
+}
+
+.talking {
+    animation: bounceTalk 0.15s infinite alternate ease-in-out;
+}
+@keyframes bounceTalk {
+    from { transform: translateY(0); }
+    to { transform: translateY(-8px); }
+}
+
+#boxArea {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+#dialogName {
+    font-family: var(--font-heading);
+    font-weight: 700; font-style: italic;
+    font-size: 1.4rem;
+    background: linear-gradient(135deg, var(--wood), var(--wood2));
+    color: var(--gold3);
+    padding: 6px 20px;
+    border-radius: 4px 4px 0 0;
+    align-self: flex-start;
+    border: 2px solid var(--gold);
+    border-bottom: none;
+    margin-bottom: -2px; 
+    z-index: 902;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    box-shadow: 2px -2px 8px rgba(0,0,0,0.2);
+}
+
+#dialogBox {
+    background: rgba(255, 255, 255, 0.95); 
+    border: 3px solid var(--gold);
+    border-radius: 0 4px 4px 4px;
+    padding: 20px 25px;
+    min-height: 110px;
+    font-family: var(--font-body);
+    font-size: 1.4rem;
+    color: #222;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    position: relative;
+    cursor: pointer;
+    line-height: 1.5;
+}
+
+#dialogText { margin: 0; }
+
+#dialogArrow {
+    position: absolute;
+    bottom: 12px;
+    right: 18px;
+    font-size: 1.6rem;
+    color: var(--wood);
+    font-family: var(--font-ui);
+    opacity: 0;
+}
+.showArrow { animation: blinkArrow 1s infinite; }
+@keyframes blinkArrow {
+    0%, 100% { opacity: 0.2; transform: translateY(0); }
+    50% { opacity: 1; transform: translateY(4px); }
+}
+
+/* Opciones Centradas (Para no modificar la caja y parecer un Novel Game de misterio) */
+#dialogChoices {
+    position: fixed;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 905;
+    pointer-events: auto;
+    width: 80%;
+    max-width: 450px;
+}
+
+.choice-btn {
+    background: linear-gradient(135deg, #1e1408, #2a1c0a);
+    border: 2px solid var(--gold);
+    color: var(--parchment);
+    padding: 16px 20px;
+    border-radius: 4px;
+    font-family: var(--font-heading);
+    font-size: 1.3rem; 
+    font-style: italic;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-align: center;
+}
+.choice-btn:hover {
+    background: linear-gradient(135deg, #2a1c0a, #3a2c1a);
+    border-color: var(--gold3);
+    color: var(--gold3);
+    transform: scale(1.05);
+    box-shadow: 0 12px 25px rgba(200, 150, 12, 0.3);
+}

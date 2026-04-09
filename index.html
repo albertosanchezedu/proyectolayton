@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proyecto Layton - Técnicas de Almacén</title>
+    <!-- Fuentes estilo clásico de Layton -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Crimson+Text:ital,wght@0,400;0,600;1,400;1,600&family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Estilos Core -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dialog.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/startscreen.css">
+</head>
+<body>
+    <button id="btnAccessibility" class="accessibility-toggle" aria-label="Ajustes">⚙️ Ajustes</button>
+
+    <div id="accessibilityMenu" class="accessibility-menu hidden">
+        <h2 class="menu-title">Ajustes del Misterio</h2>
+        
+        <div class="setting-group">
+            <label>Música de Fondo</label>
+            <div class="vol-bars" id="musicVolBars">
+                <div class="vol-bar v-0 selected" data-val="0"></div>
+                <div class="vol-bar v-25" data-val="0.25"></div>
+                <div class="vol-bar v-50" data-val="0.5"></div>
+                <div class="vol-bar v-75" data-val="0.75"></div>
+                <div class="vol-bar v-100" data-val="1"></div>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label>Sonidos y Efectos (SFX)</label>
+            <div class="vol-bars" id="sfxVolBars">
+                <div class="vol-bar v-0 selected" data-val="0"></div>
+                <div class="vol-bar v-25" data-val="0.25"></div>
+                <div class="vol-bar v-50" data-val="0.5"></div>
+                <div class="vol-bar v-75" data-val="0.75"></div>
+                <div class="vol-bar v-100" data-val="1"></div>
+            </div>
+        </div>
+
+        <div class="setting-group" style="flex-direction: row; justify-content: space-between; align-items: center; border-top: 1px dashed var(--gold); padding-top: 15px;">
+            <label for="highContrast">Modo Alto Contraste</label>
+            <input type="checkbox" id="highContrast" class="classic-checkbox">
+        </div>
+        
+        <button id="closeAccessibility" class="btn" style="width: 100%; margin-top: 20px;">Guardar y Continuar</button>
+    </div>
+
+    <!-- HUD TÁCTIL CON TOOLTIPS -->
+    <div id="gameHUD" class="hud hidden">
+        <div class="hud-item tooltip-container">
+            🔍 <span id="puzzlesFound">0</span>/<span id="totalPuzzles">0</span>
+            <div class="tooltip">
+                <strong>Enigmas Encontrados</strong><br>
+                Muestra tu progreso descubriendo puzles ocultos en la escena. ¡Haz clic en todo lo que te resulte sospechoso!
+            </div>
+        </div>
+        <div class="hud-item tooltip-container">
+            🧩 <span id="puzzlesSolved">0</span>
+            <div class="tooltip">
+                <strong>Enigmas Resueltos</strong><br>
+                Rompecabezas que has logrado superar con éxito.
+            </div>
+        </div>
+        <div class="hud-item tooltip-container">
+            🪙 <span id="coinsCount">0</span>
+            <div class="tooltip">
+                <strong>Monedas Extra (Pistas)</strong><br>
+                Encuéntralas ocultas buscando en los fondos. Sirven como comodines al final de la evaluación.
+            </div>
+        </div>
+        <div class="hud-item tooltip-container">
+            ⭐ <span id="ingenioPoints">0</span>
+            <div class="tooltip">
+                <strong>Puntos de Ingenio</strong><br>
+                Demuestra tu pureza lógica. Si fallas una respuesta y vuelves a intentarlo, ganarás menos puntos al resolverlo.
+            </div>
+        </div>
+    </div>
+
+    <div id="gameContainer" class="game-container">
+        <!-- PANTALLA INICIO CLÁSICA -->
+        <div id="startScreen" class="screen active" style="overflow: hidden; background: transparent;">
+            <div id="parallaxBg" class="parallax-bg"></div>
+            <div class="dust-particles"></div>
+            <div class="intro-box">
+                <div class="intro-top">· FP COMERCIO · TÉCNICAS DE ALMACÉN ·</div>
+                <div class="intro-inner">
+                    <div class="intro-subtitle">Un misterio logístico y educativo</div>
+                    <div class="intro-title">El Profesor Alberto</div>
+                    <div class="intro-and">y el</div>
+                    <div class="intro-subtitle2">Enigma del Almacén</div>
+                    <button id="btnStart" class="btn-primary">Iniciar Episodio</button>
+                    <p class="intro-legend">Asegúrate de llevar tu sombrero de pensar.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- CAPA DE ESCENA (Visión en 1ª persona cálida) -->
+        <div id="sceneScreen" class="screen hidden">
+            <div id="sceneBackground" class="scene-bg"></div>
+            <div id="sceneInteractables" class="scene-interactables"></div>
+        </div>
+
+        <!-- ANIMACIÓN DE TRANSICIÓN DE ENIGMA -->
+        <div id="transitionOverlay">
+            <div class="play-text" id="transitionText">¡Puzle Encontrado!</div>
+        </div>
+
+        <!-- CAPA DE PUZZLE (Estilo Pergamino Layton) -->
+        <div id="puzzleScreen" class="screen hidden">
+            <div class="puzzle-container">
+                <!-- Botón de exit evidente que solo se ve en modo pizarra -->
+                <div class="exit-pizarra-overlay">
+                    <button id="btnExitPizarra" class="btn-exit-pizarra">❌ SALIR DE LA PIZARRA</button>
+                </div>
+
+                <div class="puzzle-header">
+                    <h2 id="pzlTitle">Puzle ---</h2>
+                    <div class="picarats"><span id="pzlPicarats">--</span> Puntos de Ingenio</div>
+                </div>
+                <div class="puzzle-body">
+                    <div id="pzlParams" class="puzzle-text">Description</div>
+                    <div id="pzlInteractive" class="puzzle-interactive"></div>
+                </div>
+                
+                <canvas id="canvasOverlay" width="1200" height="850"></canvas>
+                <div class="canvas-tools">
+                    <button id="btnPencil" class="tool-btn active">✏️ Tiza roja</button>
+                    <button id="btnEraser" class="tool-btn">🧽 Borrador</button>
+                    <button id="btnClearDraw" class="tool-btn">🗑️ Limpiar Todo</button>
+                </div>
+
+                <div class="puzzle-footer">
+                    <button id="btnToggleDraw" class="tool-btn">📝 Entrar en Modo Pizarra (Notas)</button>
+                    <button id="btnLeavePuzzle" class="tool-btn">⬅️ Salirse (Rendirse por ahora)</button>
+                    <button id="btnSubmitPuzzle" class="btn-primary" style="margin-top:0;">✓ Contestar / Resolver Puzle</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CAPA DE DIÁLOGOS Estilo Clásico/Centralizado -->
+        <div id="dialogBackdrop" class="dialog-backdrop hidden"></div>
+        <div id="dialogOverlay" class="hidden">
+            <div id="dialogChoices" class="hidden"></div>
+            <div id="dialogUI">
+                <div id="portraitArea">
+                    <div id="dialogPortrait">👤</div>
+                </div>
+                <div id="boxArea">
+                    <div id="dialogName">Desconocido</div>
+                    <div id="dialogBox">
+                        <p id="dialogText"></p>
+                        <div id="dialogArrow">➤</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- Scripts engine -->
+    <script src="js/engine/audio.js"></script>
+    <script src="js/engine/save.js"></script>
+    <script src="js/engine/dialog.js"></script>
+    <script src="js/engine/draw.js"></script>
+    <script src="js/engine/puzzle.js"></script>
+    <!-- Script core -->
+    <script src="js/main.js"></script>
+</body>
+</html>

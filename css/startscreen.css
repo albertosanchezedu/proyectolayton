@@ -1,0 +1,37 @@
+/* START SCREEN ANIMADA CON PARTICULAS (Estilo Misterio) */
+.parallax-bg {
+    position: absolute; inset: -5%; /* Ligeramente más grande para permitir parallax */
+    background: radial-gradient(circle at 50% 50%, #2a1c0a 0%, #0d0804 100%);
+    background-size: cover;
+    background-image: url('../assets/bg_warm_warehouse.jpg');
+    transition: transform 0.1s ease-out; /* Parallax suave al ratón */
+    z-index: 1; filter: brightness(0.65) sepia(0.3);
+}
+
+.dust-particles {
+    position: absolute; inset: 0; z-index: 2;
+    overflow: hidden; pointer-events: none;
+    background-image: 
+        radial-gradient(circle, rgba(232, 184, 50, 0.4) 1px, transparent 1px),
+        radial-gradient(circle, rgba(200, 150, 12, 0.2) 2px, transparent 2px),
+        radial-gradient(circle, rgba(245, 236, 208, 0.15) 1px, transparent 1px);
+    background-size: 150px 150px, 200px 200px, 300px 300px;
+    background-position: 0 0, 40px 60px, 130px 270px;
+    animation: dustFloat 30s linear infinite;
+    mix-blend-mode: screen;
+}
+
+@keyframes dustFloat {
+    from { background-position: 0 0, 40px 60px, 130px 270px; }
+    to { background-position: -200px -300px, 240px -400px, -100px -600px; }
+}
+
+.intro-box {
+    animation: floatBox 6s ease-in-out infinite; /* El propio cuadro flota ligeramente */
+    position: relative; z-index: 5;
+    box-shadow: 0 10px 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(232, 184, 50, 0.3);
+}
+@keyframes floatBox {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
