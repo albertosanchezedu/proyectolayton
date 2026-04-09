@@ -117,15 +117,25 @@
             <div class="play-text" id="transitionText">¡Puzle Encontrado!</div>
         </div>
 
-        <!-- CAPA DE PUZZLE (Estilo Pergamino Layton) -->
         <div id="puzzleScreen" class="screen hidden">
             <div class="puzzle-container">
-                <!-- Botón de exit evidente que solo se ve en modo pizarra -->
-
+                <!-- PANTALLA PRESENTACION -->
+                <div id="pzlPresentation" class="pzl-presentation-screen hidden">
+                    <h1 id="presTitle" class="pres-title">Puzle 001</h1>
+                    <div id="presPicarats" class="pres-picarats">40 Picarats</div>
+                    <button id="presBtn" class="pres-btn">Empezar Puzle</button>
+                    <button id="presLeaveBtn" class="pres-btn" style="margin-top:15px; background:#94C1D4;">Rendirse</button>
+                </div>
+                <!-- PANTALLA FIN CORRECTO -->
+                <div id="pzlFinish" class="pzl-finish-screen hidden">
+                    <h1 class="fin-title">¡RESUELTO!</h1>
+                    <div id="finScore" class="fin-score">+40 Picarats de Ingenio</div>
+                    <button id="finBtn" class="pres-btn" style="margin-top:30px;">Continuar Historia</button>
+                </div>
 
                 <div class="puzzle-header">
                     <h2 id="pzlTitle">Puzle ---</h2>
-                    <div class="picarats"><span id="pzlPicarats">--</span> Puntos de Ingenio</div>
+                    <div class="picarats"><span id="pzlPicarats">--</span> Picarats</div>
                 </div>
                 <div class="puzzle-body">
                     <div id="pzlParams" class="puzzle-text">Description</div>

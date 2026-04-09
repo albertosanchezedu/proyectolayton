@@ -10,7 +10,17 @@ class PuzzleSystem {
         this.btnSubmit = document.getElementById('btnSubmitPuzzle');
 
         this.transitionOverlay = document.getElementById('transitionOverlay');
-        this.transitionText = document.getElementById('transitionText');
+        
+        // Pantallas nuevas
+        this.presLayer = document.getElementById('pzlPresentation');
+        this.presTitle = document.getElementById('presTitle');
+        this.presPicarats = document.getElementById('presPicarats');
+        this.presBtn = document.getElementById('presBtn');
+        this.presLeaveBtn = document.getElementById('presLeaveBtn');
+        
+        this.finLayer = document.getElementById('pzlFinish');
+        this.finScore = document.getElementById('finScore');
+        this.finBtn = document.getElementById('finBtn');
 
         this.currentPuzzle = null;
         this.currentSelection = null; 
@@ -24,14 +34,42 @@ class PuzzleSystem {
     }
 
     setupEvents() {
-        this.btnLeave.addEventListener('click', () => {
+        this.presBtn.addEventListener('click', () => {
+            window.AudioManager.playBlip(900);
+            this.presLayer.classList.add('hidden');
+            this.startTimerIfAny();
+            
+            // Si es la primera vez que se abre en este ciclo, animacion
+            if (this.currentSelection === null && !this.screen.classList.contains('active-session')) {
+                this.screen.classList.add('active-session');
+            }
+        });
+        
+        this.presLeaveBtn.addEventListener('click', () => {
             window.AudioManager.playBlip(500);
+            this.screen.classList.remove('active-session');
             this.closePuzzle();
-            // Restaurar novela sin exito
             if(window.GameDialog && this.currentPuzzle.failNode) {
                 window.GameDialog.resumeTemp();
                 window.GameDialog.loadNode(this.currentPuzzle.failNode);
             }
+        });
+        
+        this.finBtn.addEventListener('click', () => {
+             window.AudioManager.playBlip(600);
+             this.finLayer.classList.add('hidden');
+             this.screen.classList.remove('active-session');
+             this.closePuzzle();
+             if (this.currentPuzzle.winNode) {
+                 window.GameDialog.resumeTemp();
+                 window.GameDialog.loadNode(this.currentPuzzle.winNode);
+             }
+             window.AudioManager.startOverworldMusic();
+        });
+
+        this.btnLeave.addEventListener('click', () => {
+            window.AudioManager.playBlip(500);
+            this.presLayer.classList.remove('hidden'); // Vuelve a la intro
         });
 
         this.btnSubmit.addEventListener('click', () => {
@@ -60,10 +98,16 @@ class PuzzleSystem {
         this.currentPuzzle = pzData;
         this.currentSelection = null;
         
+        // Rellenar Presentacion
+        this.presTitle.innerText = pzData.title;
+        this.presPicarats.innerText = pzData.maxPuntos + " Picarats";
+        this.presPicarats.classList.remove('punish-anim');
+        this.presBtn.innerText = "Empezar Puzle";
+        this.presLayer.classList.remove('hidden');
+        
         this.title.innerText = pzData.title;
         this.picarats.innerText = pzData.maxPuntos;
         
-        // QTE UI si se necesita (Añadido en tiempo real en la desc del puzle)
         let injectedHTML = pzData.description;
         if (pzData.timeLimit) {
             this.currentTimeLeft = pzData.timeLimit;
@@ -74,7 +118,8 @@ class PuzzleSystem {
         this.textBody.innerHTML = injectedHTML;
         
         this.buildInteractiveArea(pzData);
-
+        
+        // Muestra la pantalla base con the presLayer on top
         this.playTransitionAnimation();
     }
 
@@ -186,19 +231,14 @@ class PuzzleSystem {
     validate() {
         clearInterval(this.timerInterval);
         
-        // Obtener estado si es de rellenar huecos
         if (this.currentPuzzle.type === 'fill_blanks') {
             const selects = Array.from(this.interactiveArea.querySelectorAll('.pz-dropdown'));
-            if(selects.some(s => s.value === "")) {
-                this.currentSelection = null; // Forzará el fallo por estar vacio en setupEvents? No, si le damos a enviar saltaría vacio, asi que validamos normal como falso o bloqueamos.
-            } else {
-                this.currentSelection = selects.map(s => s.value).join(',');
-            }
+            if(selects.some(s => s.value === "")) this.currentSelection = null; 
+            else this.currentSelection = selects.map(s => s.value).join(',');
         }
         
         const isCorrect = this.currentSelection === this.currentPuzzle.correctAnswer;
         
-        // Esconder controles normales
         this.interactiveArea.style.display = 'none';
         document.querySelector('.puzzle-footer').style.display = 'none';
 
@@ -206,7 +246,7 @@ class PuzzleSystem {
         suspenseDiv.className = 'suspense-anim';
         suspenseDiv.style.textAlign = "center";
         suspenseDiv.style.padding = "40px";
-        suspenseDiv.innerHTML = `<h1 style="font-family: var(--font-heading); font-size:3rem; font-style:italic;">Analizando deducción...</h1>`;
+        suspenseDiv.innerHTML = `<h1 style="font-family: var(--font-heading); font-size:3.5rem; color: var(--dark);">Comprobando respuesta...</h1>`;
         this.textBody.parentNode.appendChild(suspenseDiv);
 
         window.AudioManager.playBlip(300);
@@ -217,42 +257,37 @@ class PuzzleSystem {
             clearInterval(tickInt);
             if (isCorrect) {
                 window.AudioManager.playCorrect(); 
-                suspenseDiv.innerHTML = `<h1 style="color:var(--gold); font-family: var(--font-heading); font-size:4rem;">¡Correcto!</h1><p style="font-size:1.5rem;">${this.currentPuzzle.explanation}</p>`;
+                suspenseDiv.innerHTML = `<h1 style="color:var(--gold); font-family: var(--font-heading); font-size:4rem;">¡Correcto!</h1><p style="font-size:1.5rem; color:var(--dark);">${this.currentPuzzle.explanation}</p>`;
                 
                 window.SaveSystem.data.puzzlesSolved++;
                 let pts = this.currentPuzzle.maxPuntos;
                 if(this.currentPuzzle.timeLimit && this.currentTimeLeft > 0) {
                     const bonus = Math.floor((this.currentTimeLeft / this.currentPuzzle.timeLimit) * this.maxBonus);
                     pts += bonus;
-                    suspenseDiv.innerHTML += `<p style="color:#2ecc71; font-weight:bold;">¡Bonificación de tiempo: +${bonus}!</p>`;
                 }
                 
                 window.SaveSystem.data.ingenioPoints += pts;
                 window.SaveSystem.updateHUD();
 
                 setTimeout(() => {
-                    this.closePuzzle();
                     suspenseDiv.remove();
                     this.interactiveArea.style.display = '';
                     document.querySelector('.puzzle-footer').style.display = '';
-                    if (this.currentPuzzle.winNode) {
-                        window.GameDialog.resumeTemp();
-                        window.GameDialog.loadNode(this.currentPuzzle.winNode);
-                    }
-                    window.AudioManager.startOverworldMusic();
-                }, 5000);
+                    
+                    // Show final screen
+                    this.finScore.innerText = `+${pts} Picarats Obtenidos`;
+                    this.finLayer.classList.remove('hidden');
+                }, 4000);
 
             } else {
                 window.AudioManager.playWrong(); 
                 
-                // Penalizacion proporcional de Picarats
                 const prevPoints = this.currentPuzzle.maxPuntos;
                 const optionsCount = (this.currentPuzzle.options || []).length || 2;
                 const newPoints = Math.max(0, prevPoints - Math.floor(prevPoints / optionsCount));
                 this.currentPuzzle.maxPuntos = newPoints;
                 
-                suspenseDiv.innerHTML = `<h1 style="color:#e74c3c; font-family: var(--font-heading); font-size:4rem;">¡Falso!</h1>
-                                         <p style="font-size:1.5rem;">Puntos de Ingenio reducidos: ${prevPoints} ➔ <b style="color:red">${newPoints}</b></p>`;
+                suspenseDiv.innerHTML = `<h1 style="color:#D14D4D; font-family: var(--font-heading); font-size:5rem;">¡Falso!</h1>`;
                 
                 setTimeout(() => {
                     suspenseDiv.remove();
@@ -261,17 +296,26 @@ class PuzzleSystem {
                     this.currentSelection = null;
                     this.picarats.innerText = newPoints;
                     
-                    Array.from(this.interactiveArea.children).forEach(c => {
-                        c.style.borderColor = 'var(--wood)';
-                        c.style.background = '#fff';
-                        c.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                    });
-                    
-                    // Restaura el QTE si lo habia para evitar bugs
-                    if (this.currentPuzzle.timeLimit) {
-                         this.currentTimeLeft = this.currentPuzzle.timeLimit;
-                         this.startTimerIfAny();
+                    if(this.currentPuzzle.type === 'fill_blanks') {
+                        Array.from(this.interactiveArea.querySelectorAll('.pz-dropdown')).forEach(s => s.value = "");
+                    } else {
+                        Array.from(this.interactiveArea.children).forEach(c => {
+                            c.style.borderColor = 'var(--wood)';
+                            c.style.background = '#fff';
+                        });
                     }
+                    
+                    // Vuelve a la intro con animacion de perdida de picarats!
+                    this.presPicarats.innerText = prevPoints + " Picarats";
+                    this.presBtn.innerText = "Reintentar";
+                    this.presLayer.classList.remove('hidden');
+                    
+                    setTimeout(() => {
+                        window.AudioManager.playBlip(200);
+                        this.presPicarats.classList.add('punish-anim');
+                        this.presPicarats.innerText = newPoints + " Picarats";
+                    }, 800);
+                    
                 }, 3500);
             }
         }, 2200);
