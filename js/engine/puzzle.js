@@ -229,6 +229,8 @@ class PuzzleSystem {
     }
 
     validate() {
+        if (this.isAnimating) return;
+        this.isAnimating = true;
         clearInterval(this.timerInterval);
         
         if (this.currentPuzzle.type === 'fill_blanks') {
@@ -277,14 +279,17 @@ class PuzzleSystem {
                     // Show final screen
                     this.finScore.innerText = `+${pts} Picarats Obtenidos`;
                     this.finLayer.classList.remove('hidden');
+                    this.isAnimating = false;
                 }, 4000);
 
             } else {
                 window.AudioManager.playWrong(); 
                 
                 const prevPoints = this.currentPuzzle.maxPuntos;
-                const optionsCount = (this.currentPuzzle.options || []).length || 2;
-                const newPoints = Math.max(0, prevPoints - Math.floor(prevPoints / optionsCount));
+                const optionsArray = this.currentPuzzle.options || [];
+                const optionsCount = Math.max(1, optionsArray.length || 2);
+                const deduction = Math.max(1, Math.floor(prevPoints / optionsCount));
+                const newPoints = Math.max(0, prevPoints - deduction);
                 this.currentPuzzle.maxPuntos = newPoints;
                 
                 suspenseDiv.innerHTML = `<h1 style="color:#D14D4D; font-family: var(--font-heading); font-size:5rem;">¡Falso!</h1>`;
@@ -314,6 +319,7 @@ class PuzzleSystem {
                         window.AudioManager.playBlip(200);
                         this.presPicarats.classList.add('punish-anim');
                         this.presPicarats.innerText = newPoints + " Picarats";
+                        this.isAnimating = false; // Liberar lock
                     }, 800);
                     
                 }, 3500);
