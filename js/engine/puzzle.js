@@ -1,4 +1,4 @@
-/* Ajustes Puzzle para el layout clásico novel con TRANSICIONES */
+/* Ajustes Puzzle para el layout clásico novel con TRANSICIONES y QTE */
 class PuzzleSystem {
     constructor() {
         this.screen = document.getElementById('puzzleScreen');
@@ -14,6 +14,12 @@ class PuzzleSystem {
 
         this.currentPuzzle = null;
         this.currentSelection = null; 
+        
+        // QTE logic
+        this.timerInterval = null;
+        this.currentTimeLeft = 0;
+        this.maxBonus = 0;
+
         this.setupEvents();
     }
 
@@ -21,13 +27,20 @@ class PuzzleSystem {
         this.btnLeave.addEventListener('click', () => {
             window.AudioManager.playBlip(500);
             this.closePuzzle();
+            // Restaurar novela sin exito
+            if(window.GameDialog && this.currentPuzzle.failNode) {
+                window.GameDialog.resumeTemp();
+                window.GameDialog.loadNode(this.currentPuzzle.failNode);
+            }
         });
 
         this.btnSubmit.addEventListener('click', () => {
             if(!this.currentSelection) {
-                window.GameDialog.startDialog({
-                    start: {char: "luke", text: "¡Profesor! Aún no has dado con una respuesta del cuadro.", next:null}
-                }, "start");
+                // Generamos un dialog temporal estilo layton
+                const errDialog = {
+                    "start": {char: "luke", text: "¡Profesor! Aún no he marcado ninguna decisión lógica en el pergamino.", next:null}
+                };
+                window.GameDialog.startDialog(errDialog, "start");
                 return;
             }
             this.validate();
@@ -36,36 +49,65 @@ class PuzzleSystem {
 
     loadPuzzle(puzzleId) {
         const pzData = window.GameData.puzzles[puzzleId];
-        if(!pzData) { alert("Puzzle no encontrado en el JSON."); return; }
+        if(!pzData) { alert("Puzzle no encontrado."); return; }
         
         this.currentPuzzle = pzData;
         this.currentSelection = null;
         
         this.title.innerText = pzData.title;
         this.picarats.innerText = pzData.maxPuntos;
-        this.textBody.innerHTML = pzData.description;
+        
+        // QTE UI si se necesita (Añadido en tiempo real en la desc del puzle)
+        let injectedHTML = pzData.description;
+        if (pzData.timeLimit) {
+            this.currentTimeLeft = pzData.timeLimit;
+            this.maxBonus = pzData.maxPuntos;
+            injectedHTML = `<div class="qte-bar-container"><div id="qteBarFill" class="qte-bar-fill"></div></div>` + injectedHTML;
+        }
+
+        this.textBody.innerHTML = injectedHTML;
         
         this.buildInteractiveArea(pzData);
 
         this.playTransitionAnimation();
     }
 
+    startTimerIfAny() {
+        clearInterval(this.timerInterval);
+        if(!this.currentPuzzle.timeLimit) return;
+
+        const maxT = this.currentPuzzle.timeLimit;
+        const fill = document.getElementById('qteBarFill');
+        if(!fill) return;
+
+        this.timerInterval = setInterval(() => {
+            this.currentTimeLeft -= 0.1;
+            const pct = (this.currentTimeLeft / maxT) * 100;
+            fill.style.width = Math.max(0, pct) + "%";
+            
+            if(pct < 30) {
+                fill.style.backgroundPosition = "left center"; // Se pone rojo
+            }
+
+            if(this.currentTimeLeft <= 0) {
+                clearInterval(this.timerInterval);
+                fill.style.width = "0%";
+            }
+        }, 100);
+    }
+
     playTransitionAnimation() {
-        // Suena el jingle característico de "¿Un puzle?!"
         window.AudioManager.playPuzzleTransitionJingle();
 
-        // Limpiamos opacidades previas
         this.transitionOverlay.classList.remove('play');
-        // Trigger reflow (CSS trick)
         void this.transitionOverlay.offsetWidth;
         
         this.transitionOverlay.classList.add('play');
 
-        // Durante el cierre de diafragma negro (al 50% de la animación, o sea ~750ms), 
-        // cambiamos el contexto subyacente.
         setTimeout(() => {
             this.screen.classList.remove('hidden');
-            window.AudioManager.startPuzzleMusic(); // Corta el overworld, mete tema tenso de puzle.
+            window.AudioManager.startPuzzleMusic(); 
+            this.startTimerIfAny(); // Comienza la cuenta atrás si la hay
         }, 750);
     }
 
@@ -101,7 +143,7 @@ class PuzzleSystem {
                     box.style.boxShadow = '0 0 0 2px rgba(200, 150, 12, 0.3)';
                     
                     this.currentSelection = opt.id;
-                    window.AudioManager.playBlip(700); // feedback sonoro click opcion
+                    window.AudioManager.playBlip(700); 
                 };
 
                 this.interactiveArea.appendChild(box);
@@ -110,39 +152,50 @@ class PuzzleSystem {
     }
 
     validate() {
+        clearInterval(this.timerInterval);
         const isCorrect = this.currentSelection === this.currentPuzzle.correctAnswer;
         this.closePuzzle();
 
-        const dialogNode = isCorrect ? "win" : "fail";
-        const validationDialog = {
-            "start": { "char": "layton", "text": "Observemos tu razonamiento...", "next": dialogNode },
-            "win": { "char": "layton", "text": `¡Excelente deducción! ${this.currentPuzzle.explanation}`, "next": null },
-            "fail": { "char": "luke", "text": "Mmm, creo que algo falla en ese argumento, Profesor. Deberíamos revisarlo y volver a intentarlo.", "next": null }
-        };
-
-        window.GameDialog.startDialog(validationDialog, "start", () => {
-            if(isCorrect) {
-                 window.AudioManager.playCorrect(); // Música apoteósica "Correcto"
-                 window.SaveSystem.data.puzzlesSolved++;
-                 window.SaveSystem.data.ingenioPoints += this.currentPuzzle.maxPuntos;
-                 window.SaveSystem.updateHUD();
-            } else {
-                 window.AudioManager.playWrong(); // Disonancia bajista
+        if (isCorrect) {
+            window.AudioManager.playCorrect(); 
+            window.SaveSystem.data.puzzlesSolved++;
+            
+            let pts = this.currentPuzzle.maxPuntos;
+            // QTE Bonus
+            if(this.currentPuzzle.timeLimit && this.currentTimeLeft > 0) {
+                const bonus = Math.floor((this.currentTimeLeft / this.currentPuzzle.timeLimit) * this.maxBonus);
+                pts += bonus;
             }
-            // Vuelve el Overworld calmado
-            setTimeout(() => {
-                window.AudioManager.startOverworldMusic();
-            }, 1000); 
-        });
+            
+            window.SaveSystem.data.ingenioPoints += pts;
+            window.SaveSystem.updateHUD();
+
+            // Salta al nodo de victoria en narrativa
+            if (this.currentPuzzle.winNode) {
+                window.GameDialog.resumeTemp();
+                window.GameDialog.loadNode(this.currentPuzzle.winNode);
+            }
+        } else {
+            window.AudioManager.playWrong(); 
+            // Salta al nodo de fallo en narrativa
+            if (this.currentPuzzle.failNode) {
+                window.GameDialog.resumeTemp();
+                window.GameDialog.loadNode(this.currentPuzzle.failNode);
+            }
+        }
+
+        setTimeout(() => {
+            window.AudioManager.startOverworldMusic();
+        }, 1000); 
     }
 
     closePuzzle() {
+        clearInterval(this.timerInterval);
         this.screen.classList.add('hidden');
         if(window.GameDraw) {
             window.GameDraw.clearCanvas(); 
             window.GameDraw.disablePizarra();
         }
-        window.AudioManager.startOverworldMusic(); // vuelve al theme relajado si sale sin hacer submit
     }
 }
 

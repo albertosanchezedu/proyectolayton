@@ -1,5 +1,5 @@
 /**
- * Lógica principal unificadora del juego clásico.
+ * Lógica principal unificadora del juego clásico. Transformado a Visual Novel con nodos.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -26,71 +26,27 @@ document.addEventListener('DOMContentLoaded', () => {
             startScrn.classList.add('hidden');
             
             document.getElementById('gameHUD').classList.remove('hidden');
-            document.getElementById('sceneScreen').classList.remove('hidden');
+            document.getElementById('storyManagerBg').classList.remove('hidden');
 
             window.AudioManager.startOverworldMusic();
-            await loadChapter(window.GameScenario_Tema1);
+            await startGameNovel(window.GameScenario_Tema1);
         }, 500); 
     });
 });
 
-async function loadChapter(chapterData) {
+async function startGameNovel(chapterData) {
     try {
         window.GameData = chapterData;
         window.SaveSystem.data.totalPuzzles = chapterData.metadata.totalPuzzles;
         window.SaveSystem.updateHUD();
-
-        document.getElementById('sceneBackground').style.backgroundImage = `url('${chapterData.scene.background}')`;
         
-        renderScene(chapterData.scene);
-
-        if (chapterData.dialogs && chapterData.dialogs.intro) {
-            setTimeout(() => {
-                window.GameDialog.startDialog(chapterData.dialogs.intro, "start");
-            }, 500);
-        }
+        // Empieza la historia puramente lineal basada en los dialogos
+        setTimeout(() => {
+            window.GameDialog.startDialog(chapterData.dialogs, "start");
+        }, 500);
     } catch (e) {
         console.error("Error cargando capítulo:", e);
     }
-}
-
-function renderScene(sceneData) {
-    const interactablesContainer = document.getElementById('sceneInteractables');
-    interactablesContainer.innerHTML = '';
-    
-    sceneData.elements.forEach(el => {
-        const div = document.createElement('div');
-        div.className = 'interactable';
-        div.style.left = el.x;
-        div.style.top = el.y;
-
-        div.innerHTML = `
-            <div class="emoji-art">${el.emoji}</div>
-            <div class="name-tag">${el.name}</div>
-        `;
-
-        div.onclick = () => {
-            window.AudioManager.playBlip(900); // Sonido UI
-            
-            if (el.type === 'character' && el.dialogId) {
-                if(window.GameData.dialogs[el.dialogId]) {
-                    window.GameDialog.startDialog(window.GameData.dialogs[el.dialogId], "start");
-                }
-            } else if (el.type === 'puzzle') {
-                window.GameDialog.startDialog({
-                    start: { char: "layton", text: "Este enigma requiere nuestra atención. Vamos a desentrañarlo.", next: null }
-                }, "start", () => {
-                    window.GamePuzzle.loadPuzzle(el.puzzleId);
-                });
-            } else if (el.type === 'coin') {
-                window.SaveSystem.addCoin();
-                div.remove(); 
-                window.AudioManager.playCorrect();
-            }
-        };
-
-        interactablesContainer.appendChild(div);
-    });
 }
 
 function setupAccessibilityMenu() {

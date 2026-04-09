@@ -15,6 +15,7 @@ const N = {
     Cb3: hz(47), Eb3: hz(51), F3: hz(53),  Gb3: hz(54), Ab3: hz(56), Bb3: hz(58),
     Cb4: hz(59), Db4: hz(61), Eb4: hz(63), E4: hz(64), F4: hz(65),  Gb4: hz(66), G4: hz(67), Ab4: hz(68), A4: hz(69), Bb4: hz(70), B4: hz(71),
     C5: hz(72), Db5: hz(73), D5: hz(74), Eb5: hz(75), E5: hz(76), F5: hz(77),  Gb5: hz(78), G5: hz(79), Ab5: hz(80), A5:hz(81), Bb5: hz(82), Cb5: hz(71),
+    C6: hz(84), Db6: hz(85), D6: hz(86), Eb6: hz(87), E6: hz(88), F6: hz(89),  Gb6: hz(90), G6: hz(91), Ab6: hz(92), A6:hz(93), Bb6: hz(94), B6: hz(95)
 };
 
 // Motores de Audio
@@ -93,21 +94,21 @@ function runSequence(tickDur, barLen, lookahead, schedulerFn) {
     clockTimeout = setTimeout(() => runSequence(tickDur, barLen, lookahead, schedulerFn), (lookahead * tickDur * barLen - 0.1) * 1000);
 }
 
-// ── OVERWORLD THEME ── (Melodía Laytonesca alegre misteriosa)
+// ── OVERWORLD THEME ── (Melodía Laytonesca misteriosa clásica)
 function startOverworldMusic() {
     initAudio(); stopAllMusic(); currentTrack = "ovw"; globalBar = 0; globalTime = 0;
-    const q = 60/110; 
+    const q = 60/115; // Un poco más activo
     setMusicVolume(0.2);
-    runSequence(q, 3, 4, (barIdx, t0) => { // Compás 3/4
+    runSequence(q, 3, 4, (barIdx, t0) => { // Compás 3/4 vals
         const cb = barIdx % 4;
-        const root = [N.Eb2, N.Gb2, N.Ab2, N.Bb2][cb] || N.Eb2;
-        playAccordian(root, t0, q*0.8, 0.03); 
-        playAccordian(root*1.5, t0+q, q*0.8, 0.02);
+        const root = [N.A4, N.C5, N.F4, N.E4][cb] || N.A4; // Am misterioso
+        playAccordian(root/2, t0, q*0.8, 0.04); 
+        playAccordian(root, t0+q, q*0.8, 0.02);
         playAccordian(root*1.2, t0+q*2, q*0.8, 0.02);
         
-        // Melodía ligera
-        if(cb === 0) { playMarimba(N.Eb5, t0, q, 0.08); playMarimba(N.Gb5, t0+q*1.5, q*0.5, 0.08); }
-        if(cb === 1) { playMarimba(N.Bb5, t0, q, 0.08); playMarimba(N.Ab5, t0+q, q, 0.08); }
+        // Melodía ligera de piano/marimba
+        if(cb === 0) { playMarimba(N.A5, t0, q, 0.08); playMarimba(N.C6, t0+q*1.5, q*0.5, 0.08); }
+        if(cb === 1) { playMarimba(N.E6, t0, q, 0.08); playMarimba(N.D6, t0+q, q, 0.08); }
     });
 }
 

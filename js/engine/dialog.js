@@ -1,5 +1,6 @@
 /**
  * Engine de Diálogos Refinado (Estilo Layton Moderno + Web Audio)
+ * Convertido para orquestar los fondos abstractos del modo Visual Novel.
  */
 class DialogSystem {
     constructor() {
@@ -11,6 +12,7 @@ class DialogSystem {
         this.arrow = document.getElementById('dialogArrow');
         this.choicesContainer = document.getElementById('dialogChoices');
         this.dialogBox = document.getElementById('dialogBox');
+        this.bgManager = document.getElementById('storyManagerBg');
 
         this.isActive = false;
         this.isTyping = false;
@@ -21,11 +23,11 @@ class DialogSystem {
         this.currentNodeId = null;
         this.onDialogEnd = null;
 
-        // Personajes Modernizados
+        // Personajes Modernizados - TODO PASADO A TONO LAYTON SERIO
         this.characterDB = {
-            "layton": { name: "Profe Alberto", emoji: "😎", color: "#38bdf8", voice: 400 },
-            "luke":   { name: "Alumno GenZ", emoji: "🧢", color: "#fca5a5", voice: 750 },
-            "jefe":   { name: "A. Logistics (NPC)", emoji: "🤖", color: "#fcd34d", voice: 300 },
+            "layton": { name: "Profesor Alberto", emoji: "🎩", color: "#e8b832", voice: 300 },
+            "luke":   { name: "Luke", emoji: "🧢", color: "#38bdf8", voice: 600 },
+            "jefe":   { name: "WMS Central", emoji: "💻", color: "#fca5a5", voice: 200 },
             "unknown": { name: "???", emoji: "👤", color: "#94a3b8", voice: 500 }
         };
 
@@ -67,6 +69,20 @@ class DialogSystem {
             return;
         }
 
+        // ¿Hace falta cambiar el fondo narrativo general?
+        if (node.bg && this.bgManager) {
+            this.bgManager.className = `story-manager-bg ${node.bg}`;
+        }
+
+        // Si es una acción (por ejemplo, cargar puzzle) en lugar de un diálogo continuo
+        if (node.action === "load_puzzle") {
+            this.hideTemp();
+            if(window.GamePuzzle) {
+                window.GamePuzzle.loadPuzzle(node.puzzleId);
+            }
+            return;
+        }
+
         // Determinar si es un nodo puramente de opciones
         if (node.choices && !node.text) {
             this.showChoices(node.choices);
@@ -82,7 +98,7 @@ class DialogSystem {
         // Personaje
         const charData = this.characterDB[node.char] || this.characterDB["unknown"];
         this.nameLabel.textContent = charData.name;
-        this.nameLabel.style.borderColor = charData.color; // Detalle estético
+        this.nameLabel.style.borderColor = charData.color; 
         this.portrait.textContent = charData.emoji;
         this.activeVoiceFreq = charData.voice;
 
@@ -98,7 +114,7 @@ class DialogSystem {
                 this.textBox.textContent += c;
                 this.portrait.classList.add("talking");
 
-                // Sonido de tipeo estilo Layton (playBlip de Web Audio sin repetirse robótico)
+                // Sonido de tipeo estilo Layton
                 if (c !== " " && Math.random() > 0.25) {
                     if(window.AudioManager) window.AudioManager.playBlip(this.activeVoiceFreq);
                 }
@@ -126,7 +142,7 @@ class DialogSystem {
     next() {
         if (!this.isActive) return;
 
-        // Si hay opciones en pantalla, el click no debe avanzar, el usuario debe clicar una opción
+        // Si hay opciones en pantalla, el click no debe avanzar
         if (!this.choicesContainer.classList.contains('hidden')) return; 
 
         if (this.isTyping) {
@@ -165,7 +181,6 @@ class DialogSystem {
             btn.onclick = (e) => {
                 e.stopPropagation();
                 if (choice.triggerEvent) {
-                    // Por si necesitamos eventos globales para puzles
                     window.dispatchEvent(new CustomEvent(choice.triggerEvent, { detail: choice.triggerData }));
                 }
                 this.choicesContainer.classList.add('hidden');
@@ -176,10 +191,19 @@ class DialogSystem {
         });
     }
 
-    endDialog() {
-        this.isActive = false;
+    hideTemp() {
         this.overlay.classList.add('hidden');
         this.backdrop.classList.add('hidden');
+    }
+    
+    resumeTemp() {
+        this.overlay.classList.remove('hidden');
+        this.backdrop.classList.remove('hidden');
+    }
+
+    endDialog() {
+        this.isActive = false;
+        this.hideTemp();
         if (this.onDialogEnd) this.onDialogEnd();
     }
 }

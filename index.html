@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="css/dialog.css">
     <link rel="stylesheet" href="css/animations.css">
     <link rel="stylesheet" href="css/startscreen.css">
+    <link rel="stylesheet" href="css/narrative.css">
 </head>
 <body>
     <button id="btnAccessibility" class="accessibility-toggle" aria-label="Ajustes">⚙️ Ajustes</button>
@@ -98,10 +99,9 @@
             </div>
         </div>
 
-        <!-- CAPA DE ESCENA (Visión en 1ª persona cálida) -->
-        <div id="sceneScreen" class="screen hidden">
-            <div id="sceneBackground" class="scene-bg"></div>
-            <div id="sceneInteractables" class="scene-interactables"></div>
+        <!-- FONDO NARRATIVO DINÁMICO -->
+        <div id="storyManagerBg" class="story-manager-bg bg-void hidden">
+            <div class="geometric-particles"></div>
         </div>
 
         <!-- ANIMACIÓN DE TRANSICIÓN DE ENIGMA -->
@@ -144,13 +144,13 @@
         <!-- CAPA DE DIÁLOGOS Estilo Clásico/Centralizado -->
         <div id="dialogBackdrop" class="dialog-backdrop hidden"></div>
         <div id="dialogOverlay" class="hidden">
-            <div id="dialogChoices" class="hidden"></div>
             <div id="dialogUI">
                 <div id="portraitArea">
                     <div id="dialogPortrait">👤</div>
                 </div>
                 <div id="boxArea">
                     <div id="dialogName">Desconocido</div>
+                    <div id="dialogChoices" class="hidden"></div>
                     <div id="dialogBox">
                         <p id="dialogText"></p>
                         <div id="dialogArrow">➤</div>

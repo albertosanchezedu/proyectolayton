@@ -1,141 +1,84 @@
-/* Interfaz de Diálogo Estilo Clásico/Centralizado */
-#dialogOverlay {
-    position: fixed; inset: 0;
-    z-index: 900;
-    display: flex; flex-direction: column;
-    justify-content: flex-end; align-items: center;
-    padding-bottom: 2vh;
-    background: transparent;
-    pointer-events: none; 
-}
+/* DIALOGOS NOVEL REDISEÑADOS CON OPCIONES ARRIBA-DERECHA Y ESTILO LAYTON LIMPIO */
 
-/* Oscurecimiento de fondo (Atmosférico) */
 .dialog-backdrop {
-    position: fixed; inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    z-index: 899;
-    transition: opacity 0.3s;
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 890;
+    backdrop-filter: blur(2px);
+}
+#dialogOverlay {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    width: 90vw; max-width: 950px; z-index: 900;
 }
 
 #dialogUI {
-    width: 90%;
-    max-width: 800px;
-    display: flex;
-    align-items: flex-end;
-    pointer-events: auto; 
-    margin-bottom: 10px;
+    display: flex; gap: 20px; position: relative;
 }
 
+/* Retratos simples / Micro emojis sobre peana */
 #portraitArea {
-    width: 140px;
-    text-align: center;
-    margin-right: -10px; /* Se solapa elegantemente con la caja */
-    z-index: 901; 
-    position: relative;
-    top: 5px; 
+    width: 130px; height: 130px;
+    background: radial-gradient(circle, rgba(232, 184, 50, 0.4) 0%, rgba(20,10,5,0.9) 80%);
+    border: 3px solid var(--gold2); border-radius: 10px;
+    display: flex; justify-content: center; align-items: center;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+    position: relative; overflow: hidden;
 }
 #dialogPortrait {
-    font-size: 110px;
-    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6));
+    font-size: 4rem; filter: drop-shadow(0 2px 4px #000);
+    transition: transform 0.1s;
 }
+#dialogPortrait.talking {
+    animation: squishTalk 0.3s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+}
+@keyframes squishTalk { 0% { transform: scale(1, 1) translateY(0); } 100% { transform: scale(1.05, 0.95) translateY(2px); } }
 
-.talking {
-    animation: bounceTalk 0.15s infinite alternate ease-in-out;
-}
-@keyframes bounceTalk {
-    from { transform: translateY(0); }
-    to { transform: translateY(-8px); }
-}
-
+/* Caja de Texto estilo Clásico / Limpio */
 #boxArea {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+    flex: 1; position: relative;
 }
-
 #dialogName {
-    font-family: var(--font-heading);
-    font-weight: 700; font-style: italic;
-    font-size: 1.4rem;
-    background: linear-gradient(135deg, var(--wood), var(--wood2));
-    color: var(--gold3);
-    padding: 6px 20px;
-    border-radius: 4px 4px 0 0;
-    align-self: flex-start;
-    border: 2px solid var(--gold);
-    border-bottom: none;
-    margin-bottom: -2px; 
-    z-index: 902;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-    box-shadow: 2px -2px 8px rgba(0,0,0,0.2);
+    position: absolute; top: -15px; left: 20px;
+    background: var(--dark); padding: 5px 20px;
+    border: 2px solid var(--gold); border-radius: 4px;
+    color: var(--gold3); font-family: var(--font-heading); font-size: 1.2rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.6); z-index: 2; font-style: italic; font-weight: bold;
 }
-
 #dialogBox {
-    background: rgba(255, 255, 255, 0.95); 
-    border: 3px solid var(--gold);
-    border-radius: 0 4px 4px 4px;
-    padding: 20px 25px;
-    min-height: 110px;
-    font-family: var(--font-body);
-    font-size: 1.4rem;
-    color: #222;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    background: linear-gradient(180deg, rgba(26,16,8,0.95), rgba(16,8,4,0.98));
+    border: 3px solid var(--gold); border-radius: 8px;
+    padding: 30px 40px; min-height: 130px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.8), inset 0 0 15px rgba(232, 184, 50, 0.1);
     position: relative;
-    cursor: pointer;
-    line-height: 1.5;
+}
+#dialogText {
+    margin: 0; font-family: var(--font-body); font-size: 1.4rem; line-height: 1.6;
+    color: var(--parchment); text-shadow: 0 1px 2px #000;
 }
 
-#dialogText { margin: 0; }
-
-#dialogArrow {
-    position: absolute;
-    bottom: 12px;
-    right: 18px;
-    font-size: 1.6rem;
-    color: var(--wood);
-    font-family: var(--font-ui);
-    opacity: 0;
-}
-.showArrow { animation: blinkArrow 1s infinite; }
-@keyframes blinkArrow {
-    0%, 100% { opacity: 0.2; transform: translateY(0); }
-    50% { opacity: 1; transform: translateY(4px); }
-}
-
-/* Opciones Centradas (Para no modificar la caja y parecer un Novel Game de misterio) */
+/* Opciones en la ESQUINA SUPERIOR DERECHA del bocadillo */
 #dialogChoices {
-    position: fixed;
-    top: 45%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    z-index: 905;
-    pointer-events: auto;
-    width: 80%;
-    max-width: 450px;
+    position: absolute; bottom: 100%; right: 0; margin-bottom: 8px;
+    display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
+    z-index: 100;
 }
-
 .choice-btn {
-    background: linear-gradient(135deg, #1e1408, #2a1c0a);
-    border: 2px solid var(--gold);
-    color: var(--parchment);
-    padding: 16px 20px;
-    border-radius: 4px;
-    font-family: var(--font-heading);
-    font-size: 1.3rem; 
-    font-style: italic;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    text-align: center;
+    background: linear-gradient(135deg, var(--gold2), var(--gold));
+    color: var(--dark); border-radius: 4px; padding: 10px 25px;
+    font-family: var(--font-heading); font-size: 1.1rem; font-weight: bold;
+    cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+    border: 2px solid #fff; transition: all 0.2s;
+    font-style: italic; letter-spacing: 0.5px;
 }
 .choice-btn:hover {
-    background: linear-gradient(135deg, #2a1c0a, #3a2c1a);
-    border-color: var(--gold3);
-    color: var(--gold3);
-    transform: scale(1.05);
-    box-shadow: 0 12px 25px rgba(200, 150, 12, 0.3);
+    transform: translateY(-2px) scale(1.05); filter: brightness(1.2);
+}
+
+#dialogArrow {
+    position: absolute; bottom: 15px; right: 20px;
+    color: var(--gold3); font-size: 1.5rem; opacity: 0; transition: opacity 0.2s;
+    animation: bounceRight 1s infinite alternate; font-family: sans-serif;
+}
+#dialogArrow.showArrow { opacity: 1; cursor: pointer; }
+@keyframes bounceRight {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(5px); }
 }

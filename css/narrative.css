@@ -1,0 +1,61 @@
+/**
+ * Fondo abstracto dinámico por CSS. Texturas tipo Layton Misterio puro en movimiento.
+ */
+.story-manager-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 1; /* Detrás de diálogos y overlays, delante del startScreen viejo */
+    background-size: cover;
+    background-position: center;
+    transition: all 1.5s ease-in-out; 
+}
+
+/* Efectos Partículas Dinámicas CSS */
+.geometric-particles {
+    position: absolute; inset: 0; z-index: 2;
+    overflow: hidden; pointer-events: none;
+    background-image: 
+        radial-gradient(circle, rgba(232, 184, 50, 0.4) 1px, transparent 1px),
+        linear-gradient(45deg, rgba(200, 150, 12, 0.05) 25%, transparent 25%, transparent 75%, rgba(200, 150, 12, 0.05) 75%, rgba(200, 150, 12, 0.05)),
+        linear-gradient(45deg, rgba(200, 150, 12, 0.05) 25%, transparent 25%, transparent 75%, rgba(200, 150, 12, 0.05) 75%, rgba(200, 150, 12, 0.05));
+    background-size: 150px 150px, 40px 40px, 40px 40px;
+    background-position: 0 0, 0 0, 20px 20px;
+    animation: geomTranslate 60s linear infinite;
+    mix-blend-mode: screen; opacity: 0.8;
+}
+
+@keyframes geomTranslate {
+    0% { background-position: 0 0, 0 0, 20px 20px; }
+    100% { background-position: -300px -300px, 200px 200px, 220px 220px; }
+}
+
+/* ESTILOS DE FONDOS NARRATIVOS (VISUAL NOVEL) */
+.bg-void {
+    background: radial-gradient(circle at center, #111, #000);
+}
+.bg-warehouse-abstract {
+    background: radial-gradient(ellipse at bottom, #3a2512 0%, #1a1008 100%);
+    box-shadow: inset 0 0 100px rgba(200, 100, 12, 0.2);
+}
+.bg-alert-abstract {
+    background: radial-gradient(ellipse at center, #4a1515 0%, #1a0808 100%);
+    box-shadow: inset 0 0 150px rgba(255, 0, 0, 0.3);
+}
+.bg-blue-abstract {
+    background: radial-gradient(circle at top right, #1a2c3a 0%, #08101a 100%);
+}
+.bg-gold-abstract {
+    background: radial-gradient(circle at top, #6a4c15 0%, #1a1008 100%);
+}
+
+/* QUICK TIME EVENT PROGRESS BAR */
+.qte-bar-container {
+    width: 100%; height: 10px; background: rgba(0,0,0,0.3);
+    border-radius: 5px; margin-bottom: 20px; overflow: hidden;
+    position: relative; display: block; border: 1px solid var(--gold);
+}
+.qte-bar-fill {
+    height: 100%; width: 100%; background: linear-gradient(90deg, #e74c3c, #f1c40f, #2ecc71);
+    background-size: 300% 100%; background-position: right center;
+    transition: width 0.1s linear, background-position 0.1s;
+}
