@@ -51,7 +51,13 @@ const DialogData = {
         char: "🎩", name: "Profesor Alberto", machine: false,
         text: "Excelente. La balanza logística ha sido reequilibrada y el almacén funciona a pleno rendimiento. Al fin y al cabo, un puzle completado es una mente ordenada.",
         choices: [{ text: "Fin de Capítulo", target: "start" }]
-    }
+    },
+    "pzl_003_win": { char: "🧢", name: "Luke", machine: false, text: "¡Clasificación perfecta! Las cajas y envases ya van por su carril adecuado.", choices: [{ text: "Avanzar", target: "start" }] },
+    "pzl_003_fail": { char: "🎩", name: "Profesor Alberto", machine: false, text: "Esa clasificación no es correcta. Recuerda qué capa agrupa productos para el lineal y cuál para el transporte pesado.", choices: [{ text: "Reintentar", target: "start" }] },
+    "pzl_004_win": { char: "🧢", name: "Luke", machine: false, text: "¡Hiciste coincidir los símbolos! La caja fuerte de la etiquetadora ha sido calibrada.", choices: [{ text: "Avanzar", target: "start" }] },
+    "pzl_004_fail": { char: "🎩", name: "Profesor Alberto", machine: false, text: "No creo que esos símbolos de etiquetado sean los correctos. Gira los diales con más precisión.", choices: [{ text: "Reintentar", target: "start" }] },
+    "pzl_005_win": { char: "🧢", name: "Luke", machine: false, text: "¡La balanza financiera y de pesos está en equilibrio!", choices: [{ text: "Avanzar", target: "start" }] },
+    "pzl_005_fail": { char: "🎩", name: "Profesor Alberto", machine: false, text: "Piénsalo mejor, Luke. Las transpaletas manuales son baratas pero de poca capacidad. Trata de equilibrar la inversión.", choices: [{ text: "Reintentar", target: "start" }] }
 };
 
 const PuzzlesData = {
@@ -86,6 +92,63 @@ const PuzzlesData = {
         corrections: {"i1":"d2", "i2":"d3", "i3":"d1"},
         winMsg: "El Wraparound conforma cajas (Pack), el Pick by Voice libera las manos usando reconocimiento de voz y el Palé es la cúspide de la contención (Terciario).",
         nodeWin: "pzl_002_win", nodeFail: "pzl_002_fail"
+    },
+
+    // ════ 3. MÓDULO CINTA CLASIFICADORA ════
+    "puzzle_003": {
+        title: "Puzle 003: La Cinta Quebrisca",
+        valPicarats: 45,
+        desc: "La cinta está enviando mal los productos. <b>Arrastra</b> cada producto al contenedor (Envase) correspondiente para que no se arruinen en el transporte.",
+        hint: "La botella de agua toca el líquido (Primario). El pack de botellas las agrupa (Secundario). El palé las transporta (Terciario).",
+        type: "cinta_clasificador",
+        items: [
+            {id:"it1", txt:"Lata de Atún"}, 
+            {id:"it2", txt:"Palé con cajas de agua"}, 
+            {id:"it3", txt:"Pack x6 CocaCola"}
+        ],
+        bins: [
+            {id:"b1", name:"Envase Primario"}, 
+            {id:"b2", name:"Envase Secundario"}, 
+            {id:"b3", name:"Envase Terciario"}
+        ],
+        corrections: {"it1":"b1", "it3":"b2", "it2":"b3"},
+        winMsg: "Correcto. Entender las capas de envase garantiza que apliquemos la etiqueta en el lugar correcto e idóneo.",
+        nodeWin: "pzl_003_win", nodeFail: "pzl_003_fail"
+    },
+
+    // ════ 4. MÓDULO DIALES DE COMBINACIÓN ════
+    "puzzle_004": {
+        title: "Puzle 004: La Etiquetadora Atascada",
+        valPicarats: 50,
+        desc: "Para reiniciar la máquina, pulsa sobre cada dial hasta configurar los <b>Símbolos de Etiquetado</b> correctos para una valija de cristal: Frágil, Lado Arriba y Proteger Humedad.",
+        hint: "Frágil es una copa. Proteger humedad es un paraguas. Y lado arriba son dos flechas.",
+        type: "diales",
+        dials: [
+            {id:"d1", label:"Frágil", options:["☂️", "🍷", "♻️", "☢️"], correctIndex: 1},
+            {id:"d2", label:"Lado Arriba", options:["♻️", "🍷", "⬆️", "☂️"], correctIndex: 2},
+            {id:"d3", label:"Seco", options:["⬆️", "♻️", "☢️", "☂️"], correctIndex: 3}
+        ],
+        winMsg: "Al alinear los diales de 🍷, ⬆️ y ☂️, la máquina reconoce el protocolo de embalaje de cristal.",
+        nodeWin: "pzl_004_win", nodeFail: "pzl_004_fail"
+    },
+
+    // ════ 5. MÓDULO BALANZA DE EQUILIBRIO ════
+    "puzzle_005": {
+        title: "Puzle 005: El Peso de la Decisión",
+        valPicarats: 60,
+        desc: "Suma los equipos en los lados de la balanza. En la <b>izquierda</b> coloca las de trabajo manual (baja inversión). En la <b>derecha</b> el equipo motorizado de altura (alta inversión).",
+        hint: "Manual: Transpaletas manuales. Motorizado: Transelevadores y Retráctiles.",
+        type: "balanza",
+        weights: [
+            {id:"w1", name:"Transp.\nManual", val: 1},
+            {id:"w2", name:"Apilador\nManual", val: 1},
+            {id:"w3", name:"Retráctil\nMotor", val: 5},
+            {id:"w4", name:"Transel.", val: 6}
+        ],
+        targetLeft: 2,   // w1 + w2 = 2
+        targetRight: 11, // w3 + w4 = 11
+        winMsg: "La balanza detecta equipos de manutención manual (Transpaleta, Apilador) vs motorizado avanzado (Retráctil, Transelevador). ¡Perfecto!",
+        nodeWin: "pzl_005_win", nodeFail: "pzl_005_fail"
     }
 };
 

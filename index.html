@@ -5,11 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Saga Logística: Profesor Layton</title>
     <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* HUD Depuración / Testing */
+        #debugHUD {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            border: 2px solid var(--gold);
+            padding: 10px;
+            border-radius: 10px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
+            align-items: center;
+        }
+        #debugHUD h3 {
+            color: white;
+            font-family: var(--font-heading);
+            margin: 0;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+        }
+        .debug-controls {
+            display: flex;
+            gap: 10px;
+        }
+        .debug-btn {
+            background: var(--wood);
+            color: white;
+            border: 2px solid var(--gold);
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Open Sans', sans-serif;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        .debug-btn:hover {
+            transform: scale(1.05);
+            background: #5a3c26;
+        }
+        .debug-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
 </head>
 <body>
 
 <div id="gameArea">
     <div class="dust-particles"></div>
+
+    <!-- HUD Depuración (Testing) -->
+    <div id="debugHUD">
+        <h3>Menu Testing</h3>
+        <div class="debug-controls">
+            <button class="debug-btn" id="btnDebugPrev">⬅ Prev Puzle</button>
+            <button class="debug-btn" id="btnDebugNext">Next Puzle ➡</button>
+        </div>
+    </div>
 
     <!-- HUD Pistas y Monedas -->
     <div id="hudLayer">
@@ -88,6 +143,7 @@
 </div>
 
 <!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 <script src="js/engine/audio.js"></script>
 <script src="js/engine/puzzle.js"></script>
 <script src="js/engine/dialog.js"></script>

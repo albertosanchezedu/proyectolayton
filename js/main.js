@@ -33,6 +33,24 @@ class GameApp {
         this.activeMod = null;
         this.isAnimating = false; // Lock system
 
+        // Initialize Debug HUD
+        this.puzzleKeys = Object.keys(window.PuzzlesData || {});
+        this.debugIndex = 0;
+        
+        document.getElementById('btnDebugPrev').onclick = () => {
+            this.puzzleKeys = Object.keys(window.PuzzlesData || {});
+            if(this.puzzleKeys.length === 0) return;
+            this.debugIndex = (this.debugIndex - 1 + this.puzzleKeys.length) % this.puzzleKeys.length;
+            this.setupPuzle(this.puzzleKeys[this.debugIndex]);
+        };
+        
+        document.getElementById('btnDebugNext').onclick = () => {
+            this.puzzleKeys = Object.keys(window.PuzzlesData || {});
+            if(this.puzzleKeys.length === 0) return;
+            this.debugIndex = (this.debugIndex + 1) % this.puzzleKeys.length;
+            this.setupPuzle(this.puzzleKeys[this.debugIndex]);
+        };
+
         // Initialize story
         this.loadNode("start");
     }
